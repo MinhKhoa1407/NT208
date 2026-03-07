@@ -9,7 +9,7 @@ export async function POST (request : Request) {
         const {username, email, password} = body;
 
         if (!username || !email || !password) {
-            return NextResponse.json({ error: "Vui lòng nhập đây đủ thông tin" }, { status : 400 });
+            return NextResponse.json({ error: "Vui lòng nhập đầy đủ thông tin" }, { status : 400 });
         }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -20,7 +20,7 @@ export async function POST (request : Request) {
             "username" : username,
             "email" : email,
             "affiliation" : "",
-            "roles" : "",
+            "roles" : [],
             "created_at" : new Date().toISOString()
         };
 

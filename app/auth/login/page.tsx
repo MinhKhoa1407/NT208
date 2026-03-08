@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaUser,
   FaLock,
@@ -16,7 +17,67 @@ type Props = {
 
 export default function LoginPage({ defaultRegister = false }: Props) {
 
+  const router = useRouter();
+
   const [isRegister, setIsRegister] = useState(defaultRegister);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+
+  // LOGIN
+  const handleLogin = () => {
+
+    if (!email || !password) {
+      alert("Please enter email and password");
+      return;
+    }
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        name: "Demo User",
+        email: email
+      })
+    );
+    window.dispatchEvent(new Event("userChanged"));
+    router.push("/");
+  };
+
+  // REGISTER
+  const handleRegister = () => {
+
+    if (!username || !email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        name: username,
+        email: email
+      })
+    );
+    window.dispatchEvent(new Event("userChanged"));
+    router.push("/");
+  };
+
+  // GOOGLE LOGIN POPUP (GIỐNG CANVA)
+  const handleGoogle = () => {
+
+    const width = 500;
+    const height = 600;
+
+    const left = window.innerWidth / 2 - width / 2;
+    const top = window.innerHeight / 2 - height / 2;
+
+    window.open(
+      "https://accounts.google.com/signin",
+      "Google Login",
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
+  };
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-200">
@@ -30,28 +91,32 @@ export default function LoginPage({ defaultRegister = false }: Props) {
             Login
           </h1>
 
-          {/* EMAIL */}
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-4 text-gray-400" />
             <input
               type="email"
               placeholder="Email"
+              value={email}
+              onChange={(e)=>setEmail(e.target.value)}
               className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="relative mb-4">
             <FaLock className="absolute left-3 top-4 text-gray-400" />
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e)=>setPassword(e.target.value)}
               className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
             />
           </div>
 
-          {/* BUTTON */}
-          <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90">
+          <button
+            onClick={handleLogin}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90"
+          >
             Login
           </button>
 
@@ -59,10 +124,12 @@ export default function LoginPage({ defaultRegister = false }: Props) {
             or login with social platforms
           </p>
 
-          {/* SOCIAL */}
           <div className="flex justify-center gap-4 mt-4">
 
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button
+              onClick={handleGoogle}
+              className="border p-3 rounded-full hover:bg-gray-100 transition"
+            >
               <FaGoogle />
             </button>
 
@@ -77,8 +144,6 @@ export default function LoginPage({ defaultRegister = false }: Props) {
             <button className="border p-3 rounded-full hover:bg-gray-100 transition">
               <FaLinkedinIn />
             </button>
-
-            
 
           </div>
 
@@ -92,37 +157,43 @@ export default function LoginPage({ defaultRegister = false }: Props) {
             Register
           </h1>
 
-          {/* USERNAME */}
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-4 text-gray-400" />
             <input
               type="text"
               placeholder="Username"
+              value={username}
+              onChange={(e)=>setUsername(e.target.value)}
               className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
             />
           </div>
 
-          {/* EMAIL */}
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-4 text-gray-400" />
             <input
               type="email"
               placeholder="Email"
+              value={email}
+              onChange={(e)=>setEmail(e.target.value)}
               className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="relative mb-4">
             <FaLock className="absolute left-3 top-4 text-gray-400" />
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e)=>setPassword(e.target.value)}
               className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
             />
           </div>
 
-          <button className="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90">
+          <button
+            onClick={handleRegister}
+            className="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90"
+          >
             Register
           </button>
 
@@ -132,7 +203,10 @@ export default function LoginPage({ defaultRegister = false }: Props) {
 
           <div className="flex justify-center gap-4 mt-4">
 
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button
+              onClick={handleGoogle}
+              className="border p-3 rounded-full hover:bg-gray-100 transition"
+            >
               <FaGoogle />
             </button>
 
@@ -148,14 +222,12 @@ export default function LoginPage({ defaultRegister = false }: Props) {
               <FaLinkedinIn />
             </button>
 
-            
-
           </div>
 
         </div>
 
 
-        {/* RIGHT SLIDING PANEL */}
+        {/* SLIDING PANEL */}
         <div className={`absolute top-0 w-1/2 h-full bg-gradient-to-r from-teal-400 to-blue-500 text-white flex flex-col items-center justify-center text-center p-10 transition-all duration-700 ${isRegister ? "left-0" : "left-1/2"}`}>
 
           {isRegister ? (

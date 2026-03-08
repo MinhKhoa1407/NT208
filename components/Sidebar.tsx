@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   LayoutDashboard,
   FileText,
@@ -15,30 +16,32 @@ export default function Sidebar() {
   const [active, setActive] = useState("dashboard");
 
   const menu = [
-    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
-    { id: "write", name: "Write Paper", icon: FileText },
-    { id: "submission", name: "Submission", icon: Upload },
-    { id: "ai", name: "AI Tools", icon: Bot },
-    { id: "profile", name: "Edit Profile", icon: User },
-    { id: "settings", name: "Settings", icon: Settings },
+    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/" },
+    { id: "write", name: "Write Paper", icon: FileText, href: "/write-paper" },
+    { id: "submission", name: "Submission", icon: Upload, href: "/submission" },
+    { id: "ai", name: "AI Tools", icon: Bot, href: "/ai-tools" },
+    { id: "profile", name: "Edit Profile", icon: User, href: "/profile" },
+    { id: "settings", name: "Settings", icon: Settings, href: "/settings" },
   ];
 
   return (
-    <div
-      className="
-      group
-      h-screen
-      w-16
-      hover:w-60
-      transition-all
-      duration-300
-      bg-blue-600
-      text-white
-      flex
-      flex-col
-      py-6
-      "
-    >
+  <div
+    className="
+    group
+    min-h-screen
+    sticky
+    top-0
+    w-16
+    hover:w-60
+    transition-all
+    duration-300
+    bg-blue-600
+    text-white
+    flex
+    flex-col
+    py-6
+    "
+  >
 
       {/* MENU */}
       <div className="flex flex-col gap-2 w-full">
@@ -47,8 +50,9 @@ export default function Sidebar() {
           const Icon = item.icon;
 
           return (
-            <div
+            <Link
               key={item.id}
+              href={item.href}
               onClick={() => setActive(item.id)}
               className={`
               flex items-center
@@ -64,10 +68,8 @@ export default function Sidebar() {
               `}
             >
 
-              {/* ICON */}
               <Icon size={22} className="min-w-[22px]" />
 
-              {/* TEXT */}
               <span
                 className="
                 opacity-0
@@ -82,7 +84,7 @@ export default function Sidebar() {
                 {item.name}
               </span>
 
-            </div>
+            </Link>
           );
         })}
 
@@ -91,7 +93,6 @@ export default function Sidebar() {
       {/* ROBOT */}
       <div className="mt-auto flex justify-center pb-8 relative">
 
-        {/* CHAT BUBBLE */}
         <div
           className="
           absolute
@@ -116,7 +117,6 @@ export default function Sidebar() {
           Hii 👋
         </div>
 
-        {/* ROBOT IMAGE */}
         <img
           src="/robot.png"
           alt="robot"

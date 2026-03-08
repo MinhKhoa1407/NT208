@@ -1,9 +1,45 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import ThemeToggle from "./ThemeToggle";
+import { useEffect, useState } from "react";
+
+type User = {
+  name: string;
+  email: string;
+};
 
 export default function Topbar() {
+
+  const [user, setUser] = useState<User | null>(null);
+
+  const loadUser = () => {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadUser();
+
+    window.addEventListener("userChanged", loadUser);
+
+    return () => {
+      window.removeEventListener("userChanged", loadUser);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("userChanged"));
+  };
+
   return (
     <div className="relative flex items-center px-6 py-4 border-b bg-white shadow-sm">
 
@@ -34,11 +70,31 @@ export default function Topbar() {
 
         <ThemeToggle />
 
-        <Link href="/auth/login">
-          <button className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium shadow hover:scale-105 hover:shadow-lg transition">
-            Đăng nhập / Đăng ký
-          </button>
-        </Link>
+        {!user ? (
+          <Link href="/auth/login">
+            <button className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium shadow hover:scale-105 hover:shadow-lg transition">
+              Đăng nhập / Đăng ký
+            </button>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-3">
+
+            <Link
+              href="/profile"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              {user.name}
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+
+          </div>
+        )}
 
       </div>
 

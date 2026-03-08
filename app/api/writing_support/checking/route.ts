@@ -8,7 +8,7 @@ export async function POST (request : Request) {
         const { text } = await request.json();
 
         const model = genAI.getGenerativeModel({
-            model : "gemini-1.5-flash",
+            model : "gemini-2.5-flash",
             generationConfig: { responseMimeType: "application/json" }
         });
 
@@ -201,9 +201,19 @@ export async function POST (request : Request) {
                         ${ text }
                         `;
         const result = await model.generateContent(prompt);
-        const response = result.response.text();
+        let responseText = await result.response.text();
+        responseText = responseText.replace(/```json|```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(response));
+        try {
+            const jsonData = JSON.parse(responseText);
+            return NextResponse.json(jsonData);
+        } catch (parseError) {
+            console.error("Lỗi Parse JSON. Nội dung thô từ AI:", responseText);
+            return NextResponse.json({ 
+                error: "Dữ liệu AI trả về không đúng định dạng",
+                raw: responseText 
+            }, { status: 500 });
+        }
     }
     catch (error : any) {
         console.error("Gemini Error:", error);

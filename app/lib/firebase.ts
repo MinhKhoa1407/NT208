@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, inMemoryPersistence, setPersistence } from "firebase/auth";
 import { getDatabase } from "firebase/database";
+
 
 const firebaseConfig = { 
   apiKey : process.env.NEXT_PUBLIC_FIREBASE_apiKey , 
@@ -15,5 +16,11 @@ const firebaseConfig = {
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const rtDb = getDatabase(app);
+const auth = getAuth(app);
+const rtDb = getDatabase(app);
+
+if (typeof window === "undefined") {
+    setPersistence(auth, inMemoryPersistence);
+}
+
+export { auth, rtDb };

@@ -26,24 +26,47 @@ export default function LoginPage({ defaultRegister = false }: Props) {
   const [username, setUsername] = useState("");
 
   // LOGIN
-  const handleLogin = () => {
+const handleLogin = async () => {
 
-    if (!email || !password) {
-      alert("Please enter email and password");
+  if (!email || !password) {
+    alert("Vui lòng nhập email và mật khẩu");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Đăng nhập thất bại");
       return;
     }
 
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        name: "Demo User",
-        email: email
-      })
-    );
-    window.dispatchEvent(new Event("userChanged"));
-    router.push("/");
-  };
+    // save user info to localStorage
+    localStorage.setItem("user", JSON.stringify(data.user));
 
+    // notify UI components (navbar, etc.)
+    window.dispatchEvent(new Event("userChanged"));
+
+    alert(data.message);
+
+    router.push("/");
+
+  } catch (error) {
+    console.error(error);
+    alert("Có lỗi xảy ra khi đăng nhập");
+  }
+};
   // REGISTER
   // Function responsible for handling the user registration process
 const handleRegister = async () => {

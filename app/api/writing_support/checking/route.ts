@@ -200,8 +200,28 @@ export async function POST (request : Request) {
 
                         ${ text }
                         `;
-        const result = await model.generateContent(prompt);
-        let responseText = await result.response.text();
+        const chunks = splitText(text, 2000);
+
+const results = [];
+
+for (const chunk of chunks) {
+
+    const result = await model.generateContent(
+        prompt + "\n\nText:\n" + chunk
+    );
+
+    let responseText = await result.response.text();
+
+    responseText = responseText.replace(/```json|```/g, "").trim();
+
+    try {
+        const parsed = JSON.parse(responseText);
+        results.push(parsed);
+    } catch {
+        console.error("Chunk parse error:", responseText);
+    }
+
+}
         responseText = responseText.replace(/```json|```/g, "").trim();
 
         try {

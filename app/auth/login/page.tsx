@@ -26,42 +26,108 @@ export default function LoginPage({ defaultRegister = false }: Props) {
   const [username, setUsername] = useState("");
 
   // LOGIN
-  const handleLogin = () => {
+const handleLogin = async () => {
 
-    if (!email || !password) {
-      alert("Please enter email and password");
+  if (!email || !password) {
+    alert("Vui lòng nhập email và mật khẩu");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Đăng nhập thất bại");
       return;
     }
 
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        name: "Demo User",
-        email: email
-      })
-    );
-    window.dispatchEvent(new Event("userChanged"));
-    router.push("/");
-  };
+    // save user info to localStorage
+    localStorage.setItem("user", JSON.stringify(data.user));
 
+    // notify UI components (navbar, etc.)
+    window.dispatchEvent(new Event("userChanged"));
+
+    alert(data.message);
+
+    router.push("/");
+
+  } catch (error) {
+    console.error(error);
+    alert("Có lỗi xảy ra khi đăng nhập");
+  }
+};
   // REGISTER
-  const handleRegister = () => {
+  // Function responsible for handling the user registration process
+const handleRegister = async () => {
 
-    if (!username || !email || !password) {
-      alert("Please fill all fields");
-      return;
+  // 1. Validate required fields before sending request
+  if (!username || !email || !password) {
+    alert("Please fill all fields"); // Notify user if any field is missing
+    return; // Stop execution
+  }
+
+  try {
+
+    // 2. Send a POST request to the register API endpoint
+    const res = await fetch("/api/auth/register", {
+      method: "POST", // HTTP method used by the backend API
+      headers: {
+        "Content-Type": "application/json" // Indicate JSON request body
+      },
+      body: JSON.stringify({
+        username, // Username provided by the user
+        email,    // User email
+        password  // User password
+      })
+    });
+
+    // 3. Parse the JSON response returned by the server
+    const data = await res.json();
+
+    // 4. Handle API error responses
+    if (!res.ok) {
+      alert(data.error); // Display backend error message
+      return; // Stop further execution
     }
 
+    // 5. Store user information locally after successful registration
+    // This allows the frontend to track authentication state
     localStorage.setItem(
       "user",
       JSON.stringify({
-        name: username,
-        email: email
+        name: data.user.username, // Username returned from backend
+        email: data.user.email    // Email returned from backend
       })
     );
+
+    // 6. Dispatch a custom event to notify other components that
+    // the user authentication state has changed
     window.dispatchEvent(new Event("userChanged"));
+
+    // 7. Provide feedback to the user
+    alert("Register success");
+
+    // 8. Redirect the user to the homepage after successful registration
     router.push("/");
-  };
+
+  } catch (err) {
+
+    // 9. Handle unexpected errors (network failure, server crash, etc.)
+    console.error(err); // Log error for debugging
+    alert("Register failed"); // Notify the user
+  }
+};
 
   // GOOGLE LOGIN POPUP (GIỐNG CANVA)
   const handleGoogle = () => {

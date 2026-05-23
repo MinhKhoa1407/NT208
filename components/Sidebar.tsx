@@ -11,7 +11,8 @@ import {
   Bot,
   User,
   Send,
-  SearchCheck
+  SearchCheck,
+  Search
 } from "lucide-react";
 export default function Sidebar() {
 
@@ -21,6 +22,7 @@ export default function Sidebar() {
   const menu = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/" },
     { id: "write", name: "Write Paper", icon: FileText, href: "/write-paper" },
+    { id: "search", name: "Search & Discovery", icon: Search, href: "/search" },
     {id: "community", name: "Community", icon: Users, href: "/community"},
     {
       id: "collaborator",

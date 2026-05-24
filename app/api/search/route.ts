@@ -1,6 +1,6 @@
 // app/api/search/route.ts
 import { NextResponse } from "next/server";
-import { supabase } from "@/app/api/supabase/route"; 
+import { supabase } from "@/app/api/supabase/index"; 
 
 export async function GET(request: Request) {
   try {

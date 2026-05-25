@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-// 🚨 THAY THẾ: Sử dụng useSearchParams để lấy dữ liệu từ URL (?returnUrl=...)
+import { useState, Suspense } from "react";
+// 🚨 Sử dụng useSearchParams bên trong mã nguồn được bao bọc bởi Suspense
 import { useSearchParams } from "next/navigation";
 import {
   FaUser,
@@ -16,14 +16,14 @@ type Props = {
   defaultRegister?: boolean;
 };
 
-export default function LoginPage({ defaultRegister = false }: Props) {
-  // 🚨 KHAI BÁO: Lấy các tham số trên thanh địa chỉ trình duyệt
+// ==================== COMPONENT CHỨA LOGIC FORM ====================
+function LoginFormContent({ defaultRegister = false }: Props) {
+  // Lấy các tham số trên thanh địa chỉ trình duyệt một cách an toàn ở client-side
   const searchParams = useSearchParams();
-  // Nếu có returnUrl thì lấy, không có thì mặc định sau khi login sẽ vào trang chủ "/"
   const returnUrl = searchParams.get("returnUrl") || "/";
 
   const [isRegister, setIsRegister] = useState(defaultRegister);
-  const [loading, setLoading] = useState(false); // Trạng thái chờ xử lý API
+  const [loading, setLoading] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,18 +53,15 @@ export default function LoginPage({ defaultRegister = false }: Props) {
         return;
       }
 
-      // 1. Tạo Cookie Đăng nhập ở client ngay lập tức để đồng bộ với Middleware
+      // Tạo Cookie Đăng nhập ở client ngay lập tức để đồng bộ với Proxy/Middleware
       document.cookie = "isLoggedIn=true; path=/; max-age=86400"; // Hạn 1 ngày
 
-      // 2. Lưu thông tin user vào localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // 3. Thông báo cho các component khác (Navbar, sidebar...) cập nhật trạng thái
       window.dispatchEvent(new Event("userChanged"));
 
       alert(data.message || "Đăng nhập thành công!");
       
-      // 4. 🚨 THAY THẾ QUAN TRỌNG: Điều hướng cứng về trang định vào thay vì đẩy về "/"
+      // Điều hướng về trang định vào thay vì đẩy về "/"
       window.location.href = returnUrl;
       
     } catch (error) {
@@ -75,7 +72,7 @@ export default function LoginPage({ defaultRegister = false }: Props) {
     }
   };
 
-  // ==================== XỬ LÝ ĐĂNG KÝ (KHÔNG CẦN VERIFY EMAIL) ====================
+  // ==================== XỬ LÝ ĐĂNG KÝ ====================
   const handleRegister = async () => {
     if (!username || !email || !password) {
       alert("Vui lòng điền đầy đủ tất cả các trường!");
@@ -311,5 +308,19 @@ export default function LoginPage({ defaultRegister = false }: Props) {
 
       </div>
     </div>
+  );
+}
+
+// ==================== COMPONENT CHÍNH EXPORT DEFAULT ====================
+export default function LoginPage({ defaultRegister = false }: Props) {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen bg-gray-200 text-gray-600 font-medium select-none">
+        Loading Auth System...
+      </div>
+    }>
+      {/* 🚨 TRUYỀN TIẾP: Đẩy prop này xuống cho LoginFormContent xử lý */}
+      <LoginFormContent defaultRegister={defaultRegister} />
+    </Suspense>
   );
 }

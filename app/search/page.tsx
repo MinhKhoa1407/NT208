@@ -36,6 +36,20 @@ export default function SearchDiscoveryPage() {
   const [totalPages, setTotalPages] = useState(0);
   const itemsPerPage = 100; 
 
+  const generateCalendarUrl = (item: any, type: 'deadline' | 'conference') => {
+    const isDeadline = type === 'deadline';
+    const dateStr = isDeadline ? item.submission_deadline : item.conference_date;
+    
+    if (!dateStr || dateStr === "N/A" || dateStr === "") return null;
+
+    // Định dạng YYYY-MM-DD sang YYYYMMDD
+    const formattedDate = dateStr.replace(/-/g, ""); 
+    const title = encodeURIComponent(`${isDeadline ? '⏰ Deadline:' : '🚀 Conf:'} ${item.full_name || item.name}`);
+    const details = encodeURIComponent(`Link: ${item.conference_url || item.journal_url || 'N/A'}`);
+    
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formattedDate}/${formattedDate}&details=${details}&sf=true&output=xml`;
+  };
+
   const handleSearchAllConditions = async (pageTarget = 1) => {
     setLoadingResults(true);
     setHasSearched(true);
@@ -322,6 +336,27 @@ export default function SearchDiscoveryPage() {
                                 <span className="text-gray-400 italic">N/A</span>
                               )}
                             </div>
+
+                            {/* NÚT ĐỒNG BỘ LỊCH */}
+                            <div className="flex gap-2 mt-3">
+                              {item.submission_deadline && item.submission_deadline !== "N/A" && (
+                                <button 
+                                  onClick={() => window.open(generateCalendarUrl(item, 'deadline')!, '_blank')}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold hover:bg-amber-100 transition-colors"
+                                >
+                                  📅 Deadline
+                                </button>
+                              )}
+                              {item.conference_date && item.conference_date !== "N/A" && (
+                                <button 
+                                  onClick={() => window.open(generateCalendarUrl(item, 'conference')!, '_blank')}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition-colors"
+                                >
+                                  🚀 Conference
+                                </button>
+                              )}
+                            </div>
+
                           </div>
                         </div>
                       );

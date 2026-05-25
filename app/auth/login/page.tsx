@@ -56,14 +56,21 @@ function LoginFormContent({ defaultRegister = false }: Props) {
       // Tạo Cookie Đăng nhập ở client ngay lập tức để đồng bộ với Proxy/Middleware
       document.cookie = "isLoggedIn=true; path=/; max-age=86400"; // Hạn 1 ngày
 
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.user) {
+        const userToStore = {
+          id: data.user.id,       // Bắt buộc phải có để trang profile lấy ra dùng làm query
+          email: data.user.email  // Lưu email hiển thị nhanh bên cột trái profile
+        };
+        localStorage.setItem("user", JSON.stringify(userToStore));
+      }
+      // ====================================================================
+
       window.dispatchEvent(new Event("userChanged"));
 
       alert(data.message || "Đăng nhập thành công!");
       
-      // Điều hướng về trang định vào thay vì đẩy về "/"
-      window.location.href = returnUrl;
-      
+      // Điều hướng thẳng về trang /profile nếu không có returnUrl chỉ định
+      window.location.href = returnUrl === "/" ? "/profile" : returnUrl;
     } catch (error) {
       console.error(error);
       alert("Có lỗi xảy ra khi đăng nhập");

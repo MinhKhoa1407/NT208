@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import {
@@ -14,22 +14,24 @@ import {
   SearchCheck,
   Search
 } from "lucide-react";
-export default function Sidebar() {
+import { useState } from "react";
 
-  const [active, setActive] = useState("dashboard");
+export default function Sidebar() {
+  // 🚨 THAY THẾ: Dùng usePathname để lấy chính xác route hiện tại thay vì dùng useState gán cứng ban đầu
+  const pathname = usePathname();
   const [openChat, setOpenChat] = useState(false);
 
   const menu = [
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/" },
     { id: "write", name: "Write Paper", icon: FileText, href: "/write-paper" },
     { id: "search", name: "Search & Discovery", icon: Search, href: "/search" },
-    {id: "community", name: "Community", icon: Users, href: "/community"},
+    { id: "community", name: "Community", icon: Users, href: "/community" },
     {
       id: "collaborator",
       name: "Collaborator Finder",
       icon: SearchCheck,
       href: "/collaborator-finder"
-},
+    },
     { id: "submission", name: "Submission", icon: Upload, href: "/submission" },
     { id: "ai", name: "AI Tools", icon: Bot, href: "/ai-tools" },
     { id: "profile", name: "Edit Profile", icon: User, href: "/profile" },
@@ -56,18 +58,20 @@ export default function Sidebar() {
         py-6
         "
       >
-
         {/* MENU */}
         <div className="flex flex-col gap-2 w-full">
-
           {menu.map((item) => {
             const Icon = item.icon;
+            
+            // 🚨 KIỂM TRA ACTIVE: Nếu pathname hiện tại khớp với href của item thì bôi đậm tab đó
+            const isActive = pathname === item.href;
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                onClick={() => setActive(item.id)}
+                // 🚨 QUAN TRỌNG: Tắt prefetch để khi click chưa đăng nhập, Middleware chặn đứng và đính kèm ?returnUrl chuẩn xác
+                prefetch={false}
                 className={`
                 flex items-center
                 gap-4
@@ -76,12 +80,9 @@ export default function Sidebar() {
                 cursor-pointer
                 transition-all
                 duration-200
-                ${active === item.id
-                    ? "bg-white/20"
-                    : "hover:bg-white/10"}
+                ${isActive ? "bg-white/20" : "hover:bg-white/10"}
                 `}
               >
-
                 <Icon size={22} className="min-w-[22px]" />
 
                 <span
@@ -97,21 +98,17 @@ export default function Sidebar() {
                 >
                   {item.name}
                 </span>
-
               </Link>
             );
           })}
-
         </div>
 
         {/* ROBOT */}
         <div className="mt-auto flex justify-center pb-8">
-
           <div
             className="relative group/robot cursor-pointer"
             onClick={() => setOpenChat(true)}
           >
-
             {/* CHAT BUBBLE */}
             <div
               className="
@@ -151,11 +148,8 @@ export default function Sidebar() {
               group-hover/robot:animate-bounce
               "
             />
-
           </div>
-
         </div>
-
       </div>
 
       {/* CHAT WINDOW */}
@@ -178,7 +172,6 @@ export default function Sidebar() {
           animate-in
           "
         >
-
           {/* HEADER */}
           <div
             className="
@@ -193,12 +186,10 @@ export default function Sidebar() {
             items-center
             "
           >
-
             <div>
               <h3 className="font-bold text-lg">
                 SciWrite Assistant 🤖
               </h3>
-
               <p className="text-xs text-blue-100">
                 Your AI research companion
               </p>
@@ -217,7 +208,6 @@ export default function Sidebar() {
             >
               ✕
             </button>
-
           </div>
 
           {/* CHAT AREA */}
@@ -230,10 +220,8 @@ export default function Sidebar() {
             space-y-4
             "
           >
-
             {/* BOT MESSAGE */}
             <div className="flex">
-
               <div
                 className="
                 bg-white
@@ -246,11 +234,9 @@ export default function Sidebar() {
                 text-gray-700
                 "
               >
-
                 <p className="font-semibold mb-2">
                   Hi 👋 I can help you with:
                 </p>
-
                 <ul className="list-disc ml-5 space-y-1">
                   <li>Scientific competitions</li>
                   <li>Research paper structure</li>
@@ -260,14 +246,11 @@ export default function Sidebar() {
                   <li>How to write abstracts</li>
                   <li>Research methodologies</li>
                 </ul>
-
               </div>
-
             </div>
 
             {/* USER MESSAGE DEMO */}
             <div className="flex justify-end">
-
               <div
                 className="
                 bg-blue-600
@@ -281,12 +264,10 @@ export default function Sidebar() {
               >
                 How can I find open-access references?
               </div>
-
             </div>
 
             {/* BOT REPLY DEMO */}
             <div className="flex">
-
               <div
                 className="
                 bg-white
@@ -302,9 +283,7 @@ export default function Sidebar() {
                 You can search on platforms like Google Scholar,
                 arXiv, DOAJ, SpringerOpen, and Semantic Scholar.
               </div>
-
             </div>
-
           </div>
 
           {/* INPUT */}
@@ -318,7 +297,6 @@ export default function Sidebar() {
             gap-2
             "
           >
-
             <input
               type="text"
               placeholder="Ask something about research papers..."
@@ -351,9 +329,7 @@ export default function Sidebar() {
             >
               <Send size={18} />
             </button>
-
           </div>
-
         </div>
       )}
     </>

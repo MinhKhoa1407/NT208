@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// 🚨 THAY THẾ: Sử dụng useSearchParams để lấy dữ liệu từ URL (?returnUrl=...)
+import { useSearchParams } from "next/navigation";
 import {
   FaUser,
   FaLock,
@@ -16,122 +17,104 @@ type Props = {
 };
 
 export default function LoginPage({ defaultRegister = false }: Props) {
-
-  const router = useRouter();
+  // 🚨 KHAI BÁO: Lấy các tham số trên thanh địa chỉ trình duyệt
+  const searchParams = useSearchParams();
+  // Nếu có returnUrl thì lấy, không có thì mặc định sau khi login sẽ vào trang chủ "/"
+  const returnUrl = searchParams.get("returnUrl") || "/";
 
   const [isRegister, setIsRegister] = useState(defaultRegister);
+  const [loading, setLoading] = useState(false); // Trạng thái chờ xử lý API
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
 
-  // LOGIN
-const handleLogin = async () => {
-
-  if (!email || !password) {
-    alert("Vui lòng nhập email và mật khẩu");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Đăng nhập thất bại");
+  // ==================== XỬ LÝ ĐĂNG NHẬP ====================
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Vui lòng nhập email và mật khẩu");
       return;
     }
 
-    // save user info to localStorage
-    localStorage.setItem("user", JSON.stringify(data.user));
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // notify UI components (navbar, etc.)
-    window.dispatchEvent(new Event("userChanged"));
+      const data = await res.json();
 
-    alert(data.message);
+      if (!res.ok) {
+        alert(data.error || "Đăng nhập thất bại");
+        return;
+      }
 
-    router.push("/");
+      // 1. Tạo Cookie Đăng nhập ở client ngay lập tức để đồng bộ với Middleware
+      document.cookie = "isLoggedIn=true; path=/; max-age=86400"; // Hạn 1 ngày
 
-  } catch (error) {
-    console.error(error);
-    alert("Có lỗi xảy ra khi đăng nhập");
-  }
-};
-  // REGISTER
-  // Function responsible for handling the user registration process
-const handleRegister = async () => {
+      // 2. Lưu thông tin user vào localStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-  // 1. Validate required fields before sending request
-  if (!username || !email || !password) {
-    alert("Please fill all fields"); // Notify user if any field is missing
-    return; // Stop execution
-  }
+      // 3. Thông báo cho các component khác (Navbar, sidebar...) cập nhật trạng thái
+      window.dispatchEvent(new Event("userChanged"));
 
-  try {
+      alert(data.message || "Đăng nhập thành công!");
+      
+      // 4. 🚨 THAY THẾ QUAN TRỌNG: Điều hướng cứng về trang định vào thay vì đẩy về "/"
+      window.location.href = returnUrl;
+      
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi xảy ra khi đăng nhập");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 2. Send a POST request to the register API endpoint
-    const res = await fetch("/api/auth/register", {
-      method: "POST", // HTTP method used by the backend API
-      headers: {
-        "Content-Type": "application/json" // Indicate JSON request body
-      },
-      body: JSON.stringify({
-        username, // Username provided by the user
-        email,    // User email
-        password  // User password
-      })
-    });
-
-    // 3. Parse the JSON response returned by the server
-    const data = await res.json();
-
-    // 4. Handle API error responses
-    if (!res.ok) {
-      alert(data.error); // Display backend error message
-      return; // Stop further execution
+  // ==================== XỬ LÝ ĐĂNG KÝ (KHÔNG CẦN VERIFY EMAIL) ====================
+  const handleRegister = async () => {
+    if (!username || !email || !password) {
+      alert("Vui lòng điền đầy đủ tất cả các trường!");
+      return;
     }
 
-    // 5. Store user information locally after successful registration
-    // This allows the frontend to track authentication state
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        name: data.user.username, // Username returned from backend
-        email: data.user.email    // Email returned from backend
-      })
-    );
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, email, password })
+      });
 
-    // 6. Dispatch a custom event to notify other components that
-    // the user authentication state has changed
-    window.dispatchEvent(new Event("userChanged"));
+      const data = await res.json();
 
-    // 7. Provide feedback to the user
-    alert("Register success");
+      if (!res.ok) {
+        alert(data.error || "Đăng ký thất bại");
+        return;
+      }
 
-    // 8. Redirect the user to the homepage after successful registration
-    router.push("/");
+      alert("Đăng ký tài khoản thành công! Bạn có thể tiến hành đăng nhập ngay lập tức.");
 
-  } catch (err) {
+      setIsRegister(false);
+      setPassword(""); 
+      setUsername(""); 
+      
+    } catch (err) {
+      console.error(err);
+      alert("Đăng ký thất bại, hệ thống đang bận vui lòng thử lại sau!");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 9. Handle unexpected errors (network failure, server crash, etc.)
-    console.error(err); // Log error for debugging
-    alert("Register failed"); // Notify the user
-  }
-};
-
-  // GOOGLE LOGIN POPUP (GIỐNG CANVA)
+  // GOOGLE LOGIN POPUP
   const handleGoogle = () => {
-
     const width = 500;
     const height = 600;
 
@@ -146,16 +129,17 @@ const handleRegister = async () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-200">
-
+    <div className="flex items-center justify-center h-screen bg-gray-200 select-none">
       <div className="relative w-[900px] h-[550px] bg-white rounded-2xl shadow-xl overflow-hidden flex">
-
+        
         {/* LOGIN FORM */}
-        <div className={`w-1/2 p-12 flex flex-col justify-center transition-all duration-700 ${isRegister ? "-translate-x-full opacity-0" : "translate-x-0"}`}>
-
-          <h1 className="text-4xl font-bold mb-8 text-center">
-            Login
-          </h1>
+        <form 
+          onSubmit={(e) => { e.preventDefault(); handleLogin(); }}
+          className={`w-1/2 p-12 flex flex-col justify-center transition-all duration-700 ${
+            isRegister ? "-translate-x-full opacity-0 pointer-events-none" : "translate-x-0 z-10"
+          }`}
+        >
+          <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Login</h1>
 
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-4 text-gray-400" />
@@ -163,8 +147,9 @@ const handleRegister = async () => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e)=>setEmail(e.target.value)}
-              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none focus:bg-white focus:border-blue-500 transition disabled:opacity-60"
             />
           </div>
 
@@ -174,16 +159,18 @@ const handleRegister = async () => {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e)=>setPassword(e.target.value)}
-              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none focus:bg-white focus:border-blue-500 transition disabled:opacity-60"
             />
           </div>
 
           <button
-            onClick={handleLogin}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? "Processing..." : "Login"}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-6">
@@ -191,37 +178,34 @@ const handleRegister = async () => {
           </p>
 
           <div className="flex justify-center gap-4 mt-4">
-
             <button
+              type="button"
               onClick={handleGoogle}
-              className="border p-3 rounded-full hover:bg-gray-100 transition"
+              disabled={loading}
+              className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50"
             >
               <FaGoogle />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaFacebookF />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaGithub />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaLinkedinIn />
             </button>
-
           </div>
-
-        </div>
-
+        </form>
 
         {/* REGISTER FORM */}
-        <div className={`w-1/2 p-12 flex flex-col justify-center transition-all duration-700 ${isRegister ? "translate-x-0" : "translate-x-full opacity-0"}`}>
-
-          <h1 className="text-4xl font-bold mb-8 text-center">
-            Register
-          </h1>
+        <form 
+          onSubmit={(e) => { e.preventDefault(); handleRegister(); }}
+          className={`w-1/2 p-12 flex flex-col justify-center transition-all duration-700 ${
+            isRegister ? "translate-x-0 z-10" : "translate-x-full opacity-0 pointer-events-none"
+          }`}
+        >
+          <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Register</h1>
 
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-4 text-gray-400" />
@@ -229,8 +213,9 @@ const handleRegister = async () => {
               type="text"
               placeholder="Username"
               value={username}
-              onChange={(e)=>setUsername(e.target.value)}
-              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none focus:bg-white focus:border-teal-500 transition disabled:opacity-60"
             />
           </div>
 
@@ -240,8 +225,9 @@ const handleRegister = async () => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e)=>setEmail(e.target.value)}
-              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none focus:bg-white focus:border-teal-500 transition disabled:opacity-60"
             />
           </div>
 
@@ -251,16 +237,18 @@ const handleRegister = async () => {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e)=>setPassword(e.target.value)}
-              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none"
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 p-3 border rounded bg-gray-100 focus:outline-none focus:bg-white focus:border-teal-500 transition disabled:opacity-60"
             />
           </div>
 
           <button
-            onClick={handleRegister}
-            className="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white p-3 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Register
+            {loading ? "Creating Account..." : "Register"}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-6">
@@ -268,74 +256,60 @@ const handleRegister = async () => {
           </p>
 
           <div className="flex justify-center gap-4 mt-4">
-
             <button
+              type="button"
               onClick={handleGoogle}
-              className="border p-3 rounded-full hover:bg-gray-100 transition"
+              disabled={loading}
+              className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50"
             >
               <FaGoogle />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaFacebookF />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaGithub />
             </button>
-
-            <button className="border p-3 rounded-full hover:bg-gray-100 transition">
+            <button type="button" disabled={loading} className="border p-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50">
               <FaLinkedinIn />
             </button>
-
           </div>
-
-        </div>
-
+        </form>
 
         {/* SLIDING PANEL */}
-        <div className={`absolute top-0 w-1/2 h-full bg-gradient-to-r from-teal-400 to-blue-500 text-white flex flex-col items-center justify-center text-center p-10 transition-all duration-700 ${isRegister ? "left-0" : "left-1/2"}`}>
-
+        <div className={`absolute top-0 w-1/2 h-full bg-gradient-to-r from-teal-400 to-blue-500 text-white flex flex-col items-center justify-center text-center p-10 transition-all duration-700 z-20 ${
+          isRegister ? "left-0" : "left-1/2"
+        }`}>
           {isRegister ? (
             <>
-              <h2 className="text-3xl font-semibold mb-4">
-                Welcome Back!
-              </h2>
-
-              <p className="mb-6 text-sm opacity-90">
-                Already have an account?
-              </p>
-
+              <h2 className="text-3xl font-semibold mb-4">Welcome Back!</h2>
+              <p className="mb-6 text-sm opacity-90">Already have an account?</p>
               <button
+                type="button"
                 onClick={() => setIsRegister(false)}
-                className="border border-white px-8 py-2 rounded-full hover:bg-white hover:text-blue-500 transition"
+                disabled={loading}
+                className="border border-white px-8 py-2 rounded-full hover:bg-white hover:text-teal-500 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Login
               </button>
             </>
           ) : (
             <>
-              <h2 className="text-3xl font-semibold mb-4">
-                Hello, Welcome!
-              </h2>
-
-              <p className="mb-6 text-sm opacity-90">
-                Don’t have an account?
-              </p>
-
+              <h2 className="text-3xl font-semibold mb-4">Hello, Welcome!</h2>
+              <p className="mb-6 text-sm opacity-90">Don’t have an account?</p>
               <button
+                type="button"
                 onClick={() => setIsRegister(true)}
-                className="border border-white px-8 py-2 rounded-full hover:bg-white hover:text-blue-500 transition"
+                disabled={loading}
+                className="border border-white px-8 py-2 rounded-full hover:bg-white hover:text-blue-500 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Register
               </button>
             </>
           )}
-
         </div>
 
       </div>
-
     </div>
   );
 }

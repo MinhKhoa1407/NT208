@@ -35,9 +35,33 @@ export default function Topbar() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("userChanged"));
+  const handleLogout = async () => {
+    try {
+      // 1. Gọi API Logout để Server xóa cookie đăng nhập tận gốc
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        alert("Đăng xuất thất bại!");
+        return;
+      }
+
+      // 2. Xóa sạch dữ liệu user lưu tạm dưới localStorage
+      localStorage.removeItem("user");
+      
+      // 3. Bắn sự kiện để đồng bộ giao diện lập tức
+      window.dispatchEvent(new Event("userChanged"));
+
+      alert("Đăng xuất thành công!");
+      
+      // 4. Ép trình duyệt nhảy về trang login cứng để xóa hoàn toàn cache giao diện cũ
+      window.location.href = "/auth/login";
+      
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi xảy ra khi đăng xuất");
+    }
   };
 
   return (

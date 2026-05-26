@@ -50,11 +50,6 @@ def fetch(url, retries=5):
 # CÀO TỰ ĐỘNG ĐẾN KHI HẾT SẠCH TRANG ALLCFP
 # =====================================================================
 def get_latest_cfp_urls():
-    """
-    Tự động tăng số trang liên tục cuốn chiếu.
-    Sẽ DỪNG NGAY LẬP TỨC nếu một trang danh sách không thu hoạch thêm được 
-    bất kỳ URL mới nào (tất cả đều đã bị trùng hoặc trang trống).
-    """
     cfp_urls = []
     seen = set()
     page = 1
@@ -75,7 +70,7 @@ def get_latest_cfp_urls():
             print(f"-> Trang {page} trống rỗng. Dừng quét.")
             break
 
-        page_links_count = 0  # Biến đếm số lượng URL MỚI của riêng trang này
+        page_links_count = 0
         
         for a in links:
             href = a.get("href")
@@ -88,7 +83,6 @@ def get_latest_cfp_urls():
                 
         print(f"-> Trang {page}: Tìm thấy {page_links_count} URLs mới.")
 
-        # ĐIỀU KIỆN DỪNG: Trang toàn đồ cũ, không thu hoạch được gì mới nữa -> DỪNG LUÔN!
         if page_links_count == 0:
             print(f"-> [DỪNG LẠI] Trang {page} không chứa bất kỳ URL mới nào nữa. Kết thúc quét danh sách.")
             break
@@ -111,7 +105,6 @@ def parse_cfp_detail(wikicfp_url):
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1. Parse Title & Acronym
     title_tag = soup.find("title")
     full_name = title_tag.text.replace("| WikiCFP", "").strip() if title_tag else "Unknown Conference"
     acronym = full_name.split(":")[0].strip() if full_name else None
@@ -123,14 +116,12 @@ def parse_cfp_detail(wikicfp_url):
     conference_date = None
     official_link = None
 
-    # 🎯 FIX CHUẨN LOGIC LINK CHÍNH THỨC: Tìm theo text node "Link:" chính xác tuyệt đối
     link_text_node = soup.find(string=lambda t: t and "Link:" in t)
     if link_text_node:
         a_tag = link_text_node.find_next("a")
         if a_tag and a_tag.get("href"):
             official_link = a_tag["href"].strip()
 
-    # 2. Parse các thông tin dạng bảng (Where, Submission Deadline)
     for row in soup.find_all("tr"):
         th = row.find("th")
         if not th:
@@ -147,14 +138,12 @@ def parse_cfp_detail(wikicfp_url):
             if date_span and date_span.get("content"):
                 deadline = date_span["content"][:10]
 
-    # 3. Parse Conference Date (Thời gian diễn ra hội nghị)
     event_block = soup.find("span", {"typeof": "v:Event"})
     if event_block:
         start_span = event_block.find("span", {"property": "v:startDate"})
         if start_span and start_span.get("content"):
             conference_date = start_span["content"][:10]
 
-    # 4. Parse Topics (Đồng bộ logic dấu phẩy)
     category_links = soup.select("td h5 a[href*='call?conference=']")
     for a in category_links:
         text = a.get_text(strip=True)
@@ -165,7 +154,6 @@ def parse_cfp_detail(wikicfp_url):
 
     topics_text = ", ".join(topics_list) if topics_list else None
 
-    # 5. Parse Description
     cfp_div = soup.find("div", class_="cfp")
     if cfp_div:
         description = cfp_div.get_text("\n", strip=True)[:10000]
@@ -182,28 +170,32 @@ def parse_cfp_detail(wikicfp_url):
         "deadline": deadline,
         "topics": topics_text,
         "description": description,
-        "official_link": official_link,  # Link Website thật của Hội nghị
-        "wikicfp_url": wikicfp_url       # Sẽ nạp vào bảng sources làm base_url
+        "official_link": official_link,
+        "wikicfp_url": wikicfp_url
     }
 
 
 # =====================================================================
-# LƯU DỮ LIỆU VÀO SUPABASE (KIỂM TRA SOURCES TRƯỚC, KHỚP SCHEMA 100%)
+# LƯU DỮ LIỆU VÀO SUPABASE (CHÍNH XÁC: TRẢ VỀ CFP_ID KHI CÓ BÀI MỚI TINH)
 # =====================================================================
 def save_cfp(cfp):
+    """
+    Hàm lưu dữ liệu.
+    Trả về: cfp_id (int) từ bảng public.cfp nếu đây là bài viết MỚI TINH được thêm vào hệ thống.
+    Trả về: None nếu bài viết này đã tồn tại sẵn từ trước và chỉ chạy UPDATE.
+    """
     try:
         source_id = None
         conference_id = None
+        is_brand_new = False # Đánh dấu xem có phải bài đăng mới tinh không
+        
         wikicfp_url = cfp["wikicfp_url"]
         acronym = cfp["acronym"] or "CONF"
         full_name = cfp["full_name"]
 
-        # Định dạng link Website chính thức từ trước để dùng chung
         final_official_url = cfp["official_link"] if cfp["official_link"] else f"FALLBACK_OFFICIAL_CONF_{acronym}_{int(time.time())}"
 
-        # -------------------------------------------------------------
-        # BƯỚC 1: TRA CỨU LINK WIKICFP NÀY TRONG BẢNG SOURCES
-        # -------------------------------------------------------------
+        # 1. TRA CỨU LINK WIKICFP NÀY TRONG BẢNG SOURCES
         source_check = (
             supabase
             .table("sources")
@@ -217,7 +209,6 @@ def save_cfp(cfp):
             source_id = source_check.data[0]["id"]
             print(f"   + [Sources] Link đã tồn tại. Source ID: {source_id}")
 
-            # Truy tìm hội nghị tương ứng đã gắn với nguồn này
             conf_check = (
                 supabase
                 .table("conferences")
@@ -227,7 +218,7 @@ def save_cfp(cfp):
             )
             
             if conf_check.data:
-                # Lượt chạy bình thường: Tìm thấy hội nghị cũ -> Chỉ UPDATE
+                # Tìm thấy hội nghị cũ -> CHỈ UPDATE (Không cần gửi thông báo mới)
                 conference_id = conf_check.data[0]["id"]
                 print(f"   + [Conferences] Tìm thấy hội nghị cũ qua source_id. ID: {conference_id}")
                 
@@ -242,8 +233,9 @@ def save_cfp(cfp):
                 if update_payload:
                     supabase.table("conferences").update(update_payload).eq("id", conference_id).execute()
             else:
-                # 🔥 XỬ LÝ SOURCE MỒ CÔI: Có source_id nhưng conferences chưa có dòng nào!
+                # XỬ LÝ SOURCE MỒ CÔI: Có nguồn nhưng chưa có thông tin hội nghị -> TẠO MỚI TINH
                 print(f"   ⚠️ [Phát hiện Source mồ côi] Tiến hành tạo bù hội nghị cho Source ID: {source_id}...")
+                is_brand_new = True 
                 
                 new_conf = {
                     "full_name": full_name,
@@ -253,7 +245,7 @@ def save_cfp(cfp):
                     "conference_date": cfp["conference_date"],
                     "submission_deadline": cfp["deadline"],
                     "conference_url": final_official_url,
-                    "source_id": source_id,     # Tái sử dụng lại source_id mồ côi tìm thấy
+                    "source_id": source_id,
                     "rank": "Unranked"
                 }
                 
@@ -271,10 +263,11 @@ def save_cfp(cfp):
                     print(f"   ❌ Thất bại khi tạo bù hội nghị mồ côi: {e}")
         
         else:
-            # 👉 TRƯỜNG HỢP B: LINK WIKICFP NÀY MỚI TINH (CHƯA CÓ TRONG SOURCES)
+            # 👉 TRƯỜNG HỢP B: LINK WIKICFP NÀY MỚI TINH VÀ CHƯA CÓ TRONG SOURCES
             print(f"   + [Sources] Link mới tinh! Tiến hành thêm nguồn và hội nghị mới...")
+            is_brand_new = True # 🌟 Xác nhận đây là bài đăng hội nghị mới tinh!
             
-            # 1. Tạo nguồn mới trong bảng sources
+            # Tạo nguồn mới
             try:
                 source_payload = {
                     "name": f"WikiCFP - {acronym}",
@@ -287,7 +280,7 @@ def save_cfp(cfp):
             except Exception as e:
                 print(f"   ❌ Thất bại khi tạo nguồn mới: {e}")
 
-            # 2. Tiến hành thêm mới vào bảng conferences
+            # Thêm mới vào bảng conferences
             new_conf = {
                 "full_name": full_name,
                 "acronym": acronym,
@@ -313,9 +306,7 @@ def save_cfp(cfp):
             except Exception as e:
                 print(f"   ❌ Thất bại khi thêm hội nghị mới: {e}")
 
-        # -------------------------------------------------------------
-        # BƯỚC 2: ĐỒNG BỘ DỮ LIỆU VÀO BẢNG CFP (LUÔN CHẠY)
-        # -------------------------------------------------------------
+        # 2. ĐỒNG BỘ DỮ LIỆU VÀO BẢNG CFP (LUÔN CHẠY)
         if conference_id:
             cfp_data_to_save = {
                 "title": full_name,
@@ -327,13 +318,21 @@ def save_cfp(cfp):
                 "cfp_url": wikicfp_url
             }
             
-            supabase.table("cfp").upsert(cfp_data_to_save, on_conflict="cfp_url").execute()
+            # 🌟 SỬA ĐỔI QUAN TRỌNG: Thực hiện upsert và lấy data trả về trực tiếp từ bảng 'cfp'
+            cfp_res = supabase.table("cfp").upsert(cfp_data_to_save, on_conflict="cfp_url").execute()
             print(f"   🎯 [THÀNH CÔNG] Đã lưu dữ liệu public.cfp cho hội nghị: {acronym}\n")
+            
+            # 🌟 XỬ LÝ LẤY CHÍNH XÁC ID CỦA BẢNG public.cfp
+            if is_brand_new and cfp_res.data:
+                actual_cfp_id = cfp_res.data[0]["id"] # <--- Lấy id tự tăng của bảng cfp thay vì conference_id!
+                return actual_cfp_id
         else:
             print(f"   ⚠️ [Bỏ qua] Không có conference_id, hủy đồng bộ sang bảng cfp cho {acronym}\n")
 
     except Exception as e:
         print(f"❌ Lỗi quy trình lưu DB cho {cfp['full_name']}:", e)
+        
+    return None 
 
 
 # =====================================================================
@@ -342,10 +341,13 @@ def save_cfp(cfp):
 if __name__ == "__main__":
     print("\n=== KÍCH HOẠT TIẾN TRÌNH CÀO TOÀN DIỆN ALLCFP ===")
     
-    # Bước 1: Quét lấy danh sách URL mới liên tục
+    # Bước 1: Quét lấy danh sách URL
     latest_urls = get_latest_cfp_urls()
     print(f"\n=== ĐÃ QUÉT XONG DANH SÁCH ===")
     print(f"Tổng số lượng bài viết CFP mới tìm thấy: {len(latest_urls)}\n")
+
+    # 🌟 MẢNG CHỨA CÁC ID CỦA CFP MỚI TINH (LẤY TỪ BẢNG public.cfp)
+    new_cfp_ids = []
 
     # Bước 2: Duyệt chi tiết từng URL để cào dữ liệu sâu và ghi DB
     for index, url in enumerate(latest_urls, 1):
@@ -353,11 +355,40 @@ if __name__ == "__main__":
             print(f"[{index}/{len(latest_urls)}] Đang bóc tách chi tiết bài đăng...")
             cfp_data = parse_cfp_detail(url)
             if cfp_data:
-                save_cfp(cfp_data)
+                # Nhận về cfp_id nếu là bài mới tinh, nhận về None nếu là bài cũ cập nhật
+                inserted_cfp_id = save_cfp(cfp_data)
+                
+                if inserted_cfp_id:
+                    new_cfp_ids.append(inserted_cfp_id)
             
-            # Thời gian ngủ ngẫu nhiên an toàn (3.5 - 5.5 giây) cực kỳ quan trọng chống bị ban IP
             time.sleep(random.uniform(3.5, 5.5))
         except Exception as e:
             print(f"❌ Lỗi nghiêm trọng tại URL {url} -> {e}")
 
     print("🎉 HOÀN THÀNH TIẾN TRÌNH: HỆ THỐNG ĐÃ ĐỒNG BỘ SẠCH SẼ!")
+    print(f"📊 Kết quả: Tìm thấy {len(new_cfp_ids)} bài viết CfP mới tinh cần tạo thông báo.")
+    print(f"📋 Danh sách CFP IDs mới: {new_cfp_ids}")
+
+    # BƯỚC CUỐI CÙNG: Đẩy mảng ID này sang cho Next.js Backend xử lý thông báo bằng API Route
+    if len(new_cfp_ids) > 0:
+        print("🚀 Đang gửi dữ liệu sang Next.js Backend để tạo thông báo cho User...")
+        
+        # Khi test ở Local:
+        API_URL = "http://localhost:3000/api/notifications"
+        
+        # Khi deploy lên Production:
+        # API_URL = "https://sciwrite.vercel.app/api/notifications"
+        
+        try:
+            response = requests.post(
+                API_URL, 
+                json={"cfpIds": new_cfp_ids},
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            if response.status_code == 200:
+                print(f"✅ Kết quả Backend: {response.json().get('message')}")
+            else:
+                print(f"❌ Lỗi Backend xử lý thất bại (Status: {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"❌ Không thể kết nối tới Server Next.js: {e}")

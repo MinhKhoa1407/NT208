@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../api/supabase";
 
 import ResearcherCard from "./components/ResearcherCard";
 import SearchResearcher from "./components/SearchResearcher";

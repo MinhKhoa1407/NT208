@@ -1,114 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 import ResearcherCard from "./components/ResearcherCard";
 import SearchResearcher from "./components/SearchResearcher";
 
-const researchers = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    field: "Artificial Intelligence",
-    university: "MIT",
-    papers: 24,
-    match: 92,
-    skills: ["AI", "LLM", "Deep Learning"],
-    avatar: "👩‍🔬",
-  },
+import type { Researcher } from "./types/researcher";
 
-  {
-    id: 2,
-    name: "Prof. David Kim",
-    field: "Cybersecurity",
-    university: "Stanford",
-    papers: 18,
-    match: 87,
-    skills: ["Security", "Blockchain", "Networks"],
-    avatar: "👨‍💻",
-  },
-
-  {
-    id: 3,
-    name: "Dr. Emily Chen",
-    field: "Natural Language Processing",
-    university: "Oxford",
-    papers: 31,
-    match: 95,
-    skills: ["NLP", "Transformers", "AI"],
-    avatar: "👩‍🏫",
-  },
-];
+type ResearcherDB = {
+  id: number;
+  name: string;
+  field: string;
+  university: string;
+  papers: number;
+  match: number;
+  avatar: string | null;
+  researcher_skills: { skill: string }[];
+};
 
 export default function CollaboratorFinderPage() {
-
   const [search, setSearch] = useState("");
+  const [researchers, setResearchers] = useState<Researcher[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const filteredResearchers = researchers.filter((researcher) => {
+  // ✅ FIX: define function BEFORE useEffect properly
+  const fetchResearchers = async (): Promise<void> => {
+    try {
+      setLoading(true);
 
-    const keyword = search.toLowerCase();
+      const { data, error } = await supabase
+        .from("researchers")
+        .select(`
+          *,
+          researcher_skills (
+            skill
+          )
+        `);
+
+      if (error) {
+        console.error("Supabase error FULL:", error.message, error.details, error.hint);
+        return;
+      }
+
+      const typedData = data as ResearcherDB[] | null;
+
+      const formatted: Researcher[] = (typedData || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        field: r.field,
+        university: r.university,
+        papers: r.papers,
+        match: r.match,
+        avatar: r.avatar ?? "👨‍🔬",
+        skills: r.researcher_skills?.map((s) => s.skill) || [],
+      }));
+
+      setResearchers(formatted);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log("KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    fetchResearchers();
+  }, []);
+
+  const filteredResearchers = researchers.filter((r) => {
+    const k = search.toLowerCase();
 
     return (
-      researcher.name.toLowerCase().includes(keyword) ||
-      researcher.field.toLowerCase().includes(keyword) ||
-      researcher.skills.join(" ").toLowerCase().includes(keyword)
+      r.name.toLowerCase().includes(k) ||
+      r.field.toLowerCase().includes(k) ||
+      r.skills.join(" ").toLowerCase().includes(k)
     );
-
   });
 
   return (
-    <div
-      className="
-      min-h-screen
-      bg-gradient-to-br
-      from-slate-50
-      to-blue-50
-      p-8
-      "
-    >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
 
-      {/* HERO */}
       <div className="mb-10">
-
-        <h1
-          className="
-          text-5xl
-          font-extrabold
-          bg-gradient-to-r
-          from-blue-600
-          to-indigo-600
-          bg-clip-text
-          text-transparent
-          "
-        >
+        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           Collaborator Finder
         </h1>
 
         <p className="text-gray-600 mt-3 text-lg">
           Find researchers with similar interests and build research teams
         </p>
-
       </div>
 
-      {/* SEARCH */}
       <div className="mb-8">
-        <SearchResearcher
-          search={search}
-          setSearch={setSearch}
-        />
+        <SearchResearcher search={search} setSearch={setSearch} />
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {filteredResearchers.map((researcher) => (
-          <ResearcherCard
-            key={researcher.id}
-            researcher={researcher}
-          />
-        ))}
-
-      </div>
+      {loading ? (
+        <p className="text-gray-500">Loading researchers...</p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredResearchers.map((r) => (
+            <ResearcherCard key={r.id} researcher={r} />
+          ))}
+        </div>
+      )}
 
     </div>
   );

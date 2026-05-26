@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-// import ThemeToggle from "./ThemeToggle";
 import { useEffect, useState } from "react";
+import NotificationBell from "@/components/NotificationBell";
 
+// 🌟 SỬA TẠI ĐÂY: Khớp hoàn toàn với cấu trúc { id, email } trong hàm handleLogin của Khoa
 type User = {
-  name: string;
+  id: number;
   email: string;
 };
 
 export default function Topbar() {
-
   const [user, setUser] = useState<User | null>(null);
 
   const loadUser = () => {
@@ -25,7 +25,6 @@ export default function Topbar() {
   };
 
   useEffect(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
     loadUser();
 
     window.addEventListener("userChanged", loadUser);
@@ -35,9 +34,32 @@ export default function Topbar() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("userChanged"));
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        alert("Đăng xuất thất bại!");
+        return;
+      }
+
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("userChanged"));
+      alert("Đăng xuất thành công!");
+      window.location.href = "/auth/login";
+      
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi xảy ra khi đăng xuất");
+    }
+  };
+
+  // 🌟 LOGIC TRÍCH XUẤT TÊN: Lấy phần chữ trước dấu @ của email làm tên hiển thị
+  const getDisplayName = (email: string) => {
+    if (!email) return "User";
+    return email.split("@")[0];
   };
 
   return (
@@ -45,7 +67,6 @@ export default function Topbar() {
 
       {/* LEFT */}
       <div className="flex items-center gap-3">
-
         <Image
           src="/logo.png"
           alt="logo"
@@ -53,15 +74,13 @@ export default function Topbar() {
           height={56}
           className="rounded drop-shadow-md"
         />
-
         <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           SciWrite
         </span>
-
       </div>
 
       {/* CENTER */}
-      <h2 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-semibold text-gray-800 tracking-wide pointer-events-none">
+      <h2 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-semibold text-gray-800 tracking-wide pointer-events-none hidden sm:block">
         Soạn thảo bài báo Nghiên cứu Khoa học
       </h2>
 
@@ -74,25 +93,29 @@ export default function Topbar() {
             </button>
           </Link>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            
+            {/* 🔔 Truyền chuẩn user.id (bigint) vào chiếc chuông để thực hiện quét thông báo */}
+            <NotificationBell currentUserId={user.id} />
 
+            {/* 🌟 SỬA TẠI ĐÂY: Hiển thị tên rút gọn từ Email thay vì user.name */}
             <Link
               href="/profile"
-              className="font-medium text-blue-600 hover:underline"
+              className="font-medium text-blue-600 hover:underline max-w-[150px] truncate"
+              title={user.email} // Di chuột vào sẽ hiện full email
             >
-              {user.name}
+              {getDisplayName(user.email)}
             </Link>
 
             <button
               onClick={handleLogout}
-              className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+              className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition text-sm"
             >
               Logout
             </button>
 
           </div>
         )}
-
       </div>
 
     </div>

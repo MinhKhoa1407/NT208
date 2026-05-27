@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Mảng ID không hợp lệ." }, { status: 400 });
     }
 
-    // 1. Chỉ cần lấy id và topics từ bảng cfp để so khớp lĩnh vực
+    // 1. Lấy id và topics từ bảng cfp để so khớp lĩnh vực
     const { data: newCfps, error: cfpError } = await supabase
       .from("cfp")
       .select("id, topics")
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     const notificationsToInsert: any[] = [];
 
-    // 3. Vòng lặp so khớp
+    // 3. Vòng lặp so khớp lĩnh vực
     for (const cfp of newCfps) {
       if (!cfp.topics) continue;
       
@@ -45,11 +45,10 @@ export async function POST(request: Request) {
           cfpFields.includes(area.trim().toLowerCase())
         );
 
-        // 🎯 LƯU Ý TẠI ĐÂY: Nếu khớp, mình chỉ chèn cặp bài trùng (user_id, cfp_id) cực kỳ gọn nhẹ
         if (isMatched) {
           notificationsToInsert.push({
             user_id: user.id,
-            cfp_id: cfp.id, // Lưu ID của chính cfp
+            cfp_id: cfp.id,
             is_read: false,
             created_at: new Date().toISOString()
           });
@@ -57,16 +56,23 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Bulk Insert vào DB
     if (notificationsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from("notifications")
-        .insert(notificationsToInsert);
+        .upsert(notificationsToInsert, {
+          onConflict: "user_id, cfp_id", 
+          ignoreDuplicates: true,
+        });
 
-      if (insertError) return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
+      if (insertError) {
+        return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
+      }
     }
 
-    return NextResponse.json({ success: true, message: `Tạo thành công ${notificationsToInsert.length} thông báo.` });
+    return NextResponse.json({ 
+      success: true, 
+      message: `Xử lý thành công dữ liệu thông báo.` 
+    });
 
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

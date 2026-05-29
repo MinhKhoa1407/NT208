@@ -16,9 +16,6 @@ from "@/components/manuscript-scoring/SummaryCards";
 import ResultTable
 from "@/components/manuscript-scoring/ResultTable";
 
-import { MOCK_ANALYSIS_RESULT }
-from "@/lib/manuscript-scoring/mock-data";
-
 import { AnalysisResponse }
 from "@/types/analysis";
 
@@ -42,21 +39,78 @@ export default function ManuscriptScoringPage() {
   const resultRef = useRef<HTMLDivElement | null>( null );
 
   const handleAnalyze = async () => {
-  if (!selectedFile) return;
+    if (!selectedFile) return;
 
-  setIsAnalyzing(true);
+    try {
+      setIsAnalyzing(true);
 
-  setTimeout(() => {
-    setIsAnalyzing(false);
+      const formData =
+        new FormData();
 
-    setAnalysisResult(
-      MOCK_ANALYSIS_RESULT
-    );
+      formData.append(
+        "file",
+        selectedFile
+      );
 
-    setTimeout(() => { resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start", }); }, 100);
+      const response =
+        await fetch(
+          "/api/manuscript-scoring/reference-checker",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
-  }, 2000);
-};
+      const data =
+        await response.json();
+
+      console.log(data);
+
+      setAnalysisResult({
+        summary: {
+          total:
+            data.results.length,
+
+          valid:
+            data.results.filter(
+              (r: any) =>
+                r.status === "valid"
+            ).length,
+
+          invalid:
+            data.results.filter(
+              (r: any) =>
+                r.status ===
+                "invalid"
+            ).length,
+
+          retracted:
+            data.results.filter(
+              (r: any) =>
+                r.status ===
+                "retracted"
+            ).length,
+        },
+
+        results: data.results,
+      });
+
+setTimeout(() => {
+  resultRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}, 100);
+
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+
 
 
 

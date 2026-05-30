@@ -1,61 +1,29 @@
 "use client";
 
-import { useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 
 import ReviewCard from "./components/ReviewCard";
 import SearchBar from "./components/SearchBar";
 import FilterChips from "./components/FilterChips";
 import CreatePostModal from "./components/CreatePostModal";
 
-const initialPosts = [
-  {
-    id: 1,
-    title: "IEEE Access Review Experience",
-    journal: "IEEE Access",
-    content:
-      "The editor responded within 2 weeks. Reviewers were professional and gave detailed feedback.",
-    rating: 4.5,
-    likes: 24,
-    liked: false,
-    comments: 8,
-    reviewTime: "2 weeks",
-    tags: ["AI", "IEEE", "Fast Review"],
-  },
+import { supabase } from "@/app/api/supabase";
 
-  {
-    id: 2,
-    title: "Springer Journal Submission",
-    journal: "Springer",
-    content:
-      "Review process took around 3 months but communication was very clear and transparent.",
-    rating: 4.2,
-    likes: 18,
-    liked: false,
-    comments: 5,
-    reviewTime: "3 months",
-    tags: ["Cybersecurity", "Open Access"],
-  },
-
-  {
-    id: 3,
-    title: "Elsevier Conference Experience",
-    journal: "Elsevier",
-    content:
-      "The acceptance rate was competitive but the reviewers provided useful suggestions.",
-    rating: 4.0,
-    likes: 12,
-    liked: false,
-    comments: 3,
-    reviewTime: "1 month",
-    tags: ["NLP", "Conference"],
-  },
-];
-
-export default function CommunityPage() {
-
-  const [openModal, setOpenModal] = useState(false);
-  const [posts, setPosts] = useState(initialPosts);
+// =========================
+// TYPES
+// =========================
+type Post = {
+  id: number;
+  title: string;
+  journal: string;
+  content: string;
+  rating: number;
+  likes: number;
+  comments: number;
+  review_time: string;
+  tags: string[];
+  liked?: boolean;
+};
 
 type NewPost = {
   title: string;
@@ -63,125 +31,234 @@ type NewPost = {
   content: string;
 };
 
-const addPost = (newPost: NewPost) => {
+// =========================
+// KEY
+// =========================
+const LIKED_KEY = "likedPosts";
 
-  setPosts((prev) => [
-    {
-      ...newPost,
-      id: Date.now(),
-      likes: 0,
-      liked: false,
-      comments: 0,
-      rating: 5,
-      reviewTime: "Recently",
-      tags: ["New"],
-    },
+export default function CommunityPage() {
+  const [openModal, setOpenModal] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    ...prev,
-  ]);
+  const [search, setSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("All");
 
-};
+  // =========================
+  // FETCH POSTS
+  // =========================
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const currentUser = JSON.parse(
+          localStorage.getItem("user") || "{}"
+        );
 
-const handleLike = (id: number) => {
+        const userEmail = currentUser.email;
 
-  setPosts((prev) =>
-    prev.map((post) => {
+        const { data: postsData, error } = await supabase
+          .from("community_posts")
+          .select(`*, comments_table:comments(count)`)
+          .order("created_at", { ascending: false });
 
-      if (post.id === id) {
+        if (error) {
+          console.error(error);
+          return;
+        }
 
-        return {
+        const likedIds: number[] = JSON.parse(
+          localStorage.getItem(LIKED_KEY) || "[]"
+        );
+
+        const formatted = (postsData || []).map((post) => ({
           ...post,
-          liked: !post.liked,
-          likes: post.liked
-            ? post.likes - 1
-            : post.likes + 1,
-        };
+          liked: likedIds.includes(post.id),
+          comments: post.comments_table?.[0]?.count || 0,
+        }));
 
+        setPosts(formatted);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  // =========================
+  // ADD POST
+  // =========================
+  const addPost = async (newPost: NewPost) => {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .insert([
+        {
+          ...newPost,
+          author: "Anonymous Researcher",
+          likes: 0,
+          comments: 0,
+          tags: ["Research"],
+          rating: 4.0,
+          review_time: "Recently",
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setPosts((prev) => [
+      {
+        ...data[0],
+        liked: false,
+        comments: 0,
+      },
+      ...prev,
+    ]);
+  };
+
+  // =========================
+  // LIKE (LOCAL ONLY)
+  // =========================
+  const handleLike = async (id: number) => {
+    try {
+      const currentUser = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+
+      if (!currentUser.email) {
+        alert("Please login first");
+        return;
       }
 
-      return post;
-    })
-  );
+      const likedIds: number[] = JSON.parse(
+        localStorage.getItem(LIKED_KEY) || "[]"
+      );
 
-};
+      const target = posts.find((p) => p.id === id);
+      if (!target) return;
+
+      const isLiked = likedIds.includes(id);
+      const newLiked = !isLiked;
+
+      let updated = [...likedIds];
+
+      if (newLiked) updated.push(id);
+      else updated = updated.filter((x) => x !== id);
+
+      localStorage.setItem(LIKED_KEY, JSON.stringify(updated));
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                liked: newLiked,
+                likes: p.likes + (newLiked ? 1 : -1),
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("LIKE ERROR:", err);
+    }
+  };
+
+  // =========================
+  // FILTERS
+  // =========================
+  const allFilters = [
+    "All",
+    ...Array.from(new Set(posts.flatMap((p) => p.tags || []))),
+  ];
+
+  const filteredPosts = useMemo(() => {
+    const k = search.toLowerCase();
+
+    return posts.filter((post) => {
+      const matchSearch =
+        post.title.toLowerCase().includes(k) ||
+        post.journal.toLowerCase().includes(k) ||
+        post.content.toLowerCase().includes(k) ||
+        post.tags.join(" ").toLowerCase().includes(k);
+
+      const matchFilter =
+        selectedFilter === "All" ||
+        post.tags.includes(selectedFilter);
+
+      return matchSearch && matchFilter;
+    });
+  }, [posts, search, selectedFilter]);
+
+  // =========================
+  // LOADING UI (STYLE FIX)
+  // =========================
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500 text-xl">
+        Loading community...
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="
-      min-h-screen
-      bg-gradient-to-br
-      from-slate-50
-      to-blue-50
-      p-8
-      "
-    >
-
-      {/* HERO */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+      
+      {/* HERO (FIX STYLE) */}
       <div className="mb-10">
-
-        <h1
-          className="
-          text-5xl
-          font-extrabold
-          bg-gradient-to-r
-          from-blue-600
-          to-indigo-600
-          bg-clip-text
-          text-transparent
-          "
-        >
+        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           Research Community
         </h1>
 
         <p className="text-gray-600 mt-3 text-lg">
           Share and explore scientific publishing experiences
         </p>
-
       </div>
 
-      {/* SEARCH */}
+      {/* SEARCH (SPACE LIKE VERSION 1) */}
       <div className="mb-6">
-        <SearchBar />
+        <SearchBar search={search} setSearch={setSearch} />
       </div>
 
-      {/* FILTERS */}
+      {/* FILTER */}
       <div className="mb-8">
-        <FilterChips />
+        <FilterChips
+          filters={allFilters}
+          selected={selectedFilter}
+          setSelected={setSelectedFilter}
+        />
       </div>
 
       {/* POSTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {posts.map((post) => (
-          <ReviewCard
-            key={post.id}
-            post={post}
-            onLike={handleLike}
+      {filteredPosts.length === 0 ? (
+        <div className="bg-white rounded-3xl p-10 text-center shadow-md">
+          <h2 className="text-2xl font-bold text-gray-700">
+            No posts found
+          </h2>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredPosts.map((post) => (
+            <ReviewCard
+              key={post.id}
+              post={{
+                ...post,
+                reviewTime: post.review_time,
+              }}
+              onLike={handleLike}
             />
-        ))}
+          ))}
+        </div>
+      )}
 
-      </div>
-
-      {/* FLOATING BUTTON */}
+      {/* FLOATING BUTTON (STYLE LIKE VERSION 1) */}
       <button
         onClick={() => setOpenModal(true)}
-        className="
-        fixed
-        bottom-8
-        right-8
-        w-16
-        h-16
-        rounded-full
-        bg-gradient-to-r
-        from-blue-500
-        to-indigo-600
-        text-white
-        text-3xl
-        shadow-2xl
-        hover:scale-110
-        transition-all
-        duration-300
-        "
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-3xl shadow-2xl hover:scale-110 transition-all duration-300"
       >
         +
       </button>
@@ -191,8 +268,7 @@ const handleLike = (id: number) => {
         open={openModal}
         onClose={() => setOpenModal(false)}
         onCreate={addPost}
-    />
-
+      />
     </div>
   );
 }

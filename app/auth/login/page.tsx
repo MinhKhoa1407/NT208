@@ -59,7 +59,8 @@ function LoginFormContent({ defaultRegister = false }: Props) {
       if (data.user) {
         const userToStore = {
           id: data.user.id,       // Bắt buộc phải có để trang profile lấy ra dùng làm query
-          email: data.user.email  // Lưu email hiển thị nhanh bên cột trái profile
+          email: data.user.email,  // Lưu email hiển thị nhanh bên cột trái profile
+          username: data.user.username   // Lưu username để làm phần community -> phần người dùng comment tương tác
         };
         localStorage.setItem("user", JSON.stringify(userToStore));
       }

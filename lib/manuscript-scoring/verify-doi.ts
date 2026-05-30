@@ -6,7 +6,8 @@ export type VerifiedDOI = {
   status:
     | "valid"
     | "invalid"
-    | "retracted";
+    | "retracted"
+    | "lookup_failed";
 };
 
 export async function verifyDOI(

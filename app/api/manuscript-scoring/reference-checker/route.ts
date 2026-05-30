@@ -4,11 +4,11 @@ from "next/server";
 import { extractText }
 from "@/lib/manuscript-scoring/extract-text";
 
-import { extractDOIs }
-from "@/lib/manuscript-scoring/extract-doi";
+import { extractReferences }
+from "@/lib/manuscript-scoring/extract-references";
 
-import { verifyDOI }
-from "@/lib/manuscript-scoring/verify-doi";
+import { processReference }
+from "@/lib/manuscript-scoring/process-reference";
 
 export async function POST(
   req: NextRequest
@@ -17,7 +17,7 @@ export async function POST(
 
     /*
     ========================
-    GET FILE FROM FORM DATA
+    GET FILE
     ========================
     */
 
@@ -41,7 +41,7 @@ export async function POST(
 
     /*
     ========================
-    CONVERT FILE → BUFFER
+    FILE → BUFFER
     ========================
     */
 
@@ -53,7 +53,7 @@ export async function POST(
 
     /*
     ========================
-    EXTRACT RAW TEXT
+    PDF → TEXT
     ========================
     */
 
@@ -62,21 +62,67 @@ export async function POST(
 
     /*
     ========================
-    EXTRACT DOI
+    EXTRACT REFERENCES
     ========================
     */
 
-    const dois =
-      extractDOIs(text);
+    const references =
+      extractReferences(text);
 
-    console.log(dois);
+    /*
+    ========================
+    LIMIT REFERENCES
+    ========================
+    */
 
-    const verifiedResults =
-    await Promise.all(
-        dois.map((doi) =>
-        verifyDOI(doi)
-        )
-    );
+    /*
+    ========================
+    PROCESS REFERENCES
+    ========================
+    */
+
+    const results = [];
+
+    for (
+      const reference of
+      references
+    ) {
+
+      console.log(
+        "Processing reference..."
+      );
+
+      const result =
+        await processReference(
+          reference
+        );
+
+      results.push(result);
+
+      console.log(
+        `Processed ${
+          results.length
+        } / ${
+          references.length
+        }`
+      );
+
+
+      /*
+      ========================
+      SMALL DELAY
+      ========================
+      */
+
+      await new Promise(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            300
+          )
+      );
+    }
+
 
     /*
     ========================
@@ -87,14 +133,13 @@ export async function POST(
     return Response.json({
       success: true,
 
-      textLength:
-        text.length,
+      referenceCount:
+        references.length,
 
-      doiCount:
-        dois.length,
+      processedCount:
+        results.length,
 
-      results: 
-        verifiedResults,
+      results,
     });
 
   } catch (error) {

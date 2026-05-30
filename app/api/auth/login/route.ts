@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // 2. Lấy thông tin user từ bảng public.users của bạn
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, email, created_at') // Bạn có thể thêm lại 'research_interests' nếu bảng của bạn có cột này nhé
+      .select('id, email, username, created_at') // Bạn có thể thêm lại 'research_interests' nếu bảng của bạn có cột này nhé
       .eq('email', email)
       .single();
 

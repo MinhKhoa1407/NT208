@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import {
   Heart,
   MessageCircle,
@@ -7,20 +9,21 @@ import {
   Star
 } from "lucide-react";
 
-type Props = {
-  post: {
-    id: number;
-    title: string;
-    journal: string;
-    content: string;
-    rating: number;
-    likes: number;
-    comments: number;
-    reviewTime: string;
-    tags: string[];
-    liked?: boolean;
-  };
+type Post = {
+  id: number;
+  title: string;
+  journal: string;
+  content: string;
+  rating: number;
+  likes: number;
+  comments: number;
+  reviewTime: string;
+  tags: string[];
+  liked?: boolean;
+};
 
+type Props = {
+  post: Post;
   onLike: (id: number) => void;
 };
 
@@ -29,8 +32,11 @@ export default function ReviewCard({
   onLike,
 }: Props) {
 
+  const router = useRouter();
+
   return (
     <div
+      onClick={() => router.push(`/community/${post.id}`)}
       className="
       bg-white
       rounded-3xl
@@ -42,6 +48,7 @@ export default function ReviewCard({
       duration-300
       border
       border-gray-100
+      cursor-pointer
       "
     >
 
@@ -81,7 +88,7 @@ export default function ReviewCard({
       </div>
 
       {/* CONTENT */}
-      <p className="text-gray-600 mt-5 leading-relaxed">
+      <p className="text-gray-600 mt-5 leading-8 line-clamp-4">
         {post.content}
       </p>
 
@@ -89,6 +96,7 @@ export default function ReviewCard({
       <div className="flex flex-wrap gap-2 mt-5">
 
         {post.tags.map((tag) => (
+
           <span
             key={tag}
             className="
@@ -103,9 +111,12 @@ export default function ReviewCard({
           >
             #{tag}
           </span>
+
         ))}
 
       </div>
+
+    
 
       {/* FOOTER */}
       <div
@@ -122,7 +133,10 @@ export default function ReviewCard({
         <div className="flex items-center gap-5 text-gray-500">
 
           <button
-            onClick={() => onLike(post.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onLike(post.id);
+            }}
             className="
             flex
             items-center
@@ -132,18 +146,23 @@ export default function ReviewCard({
             "
           >
 
-          <Heart
-            size={18}
-            className={
-            post.liked
-              ? "fill-red-500 text-red-500"
-              : ""
-          }
-            />
+            <Heart
+              size={18}
 
-          {post.likes}
+              className={`
+                transition-all
 
-        </button>
+                ${
+              post.liked
+                    ? "fill-red-500 text-red-500 scale-110"
+                    : "text-gray-500"
+                }
+          `}
+        />
+
+            {post.likes}
+
+          </button>
 
           <div className="flex items-center gap-1">
             <MessageCircle size={18} />

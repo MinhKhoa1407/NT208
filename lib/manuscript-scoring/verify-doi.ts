@@ -82,7 +82,7 @@ export async function verifyDOI(
 
     return {
       doi,
-      status: "invalid",
+      status: "lookup_failed",
     };
   }
 }

@@ -68,13 +68,15 @@ export default function ManuscriptScoringPage() {
 
       setAnalysisResult({
         summary: {
+
           total:
             data.results.length,
 
           valid:
             data.results.filter(
               (r: any) =>
-                r.status === "valid"
+                r.status ===
+                "valid"
             ).length,
 
           invalid:
@@ -90,9 +92,25 @@ export default function ManuscriptScoringPage() {
                 r.status ===
                 "retracted"
             ).length,
+
+          notFound:
+            data.results.filter(
+              (r: any) =>
+                r.status ===
+                "not_found"
+            ).length,
+          
+          lookupFailed:
+            data.results.filter(
+              (r: any) =>
+                r.status ===
+                "lookup_failed"
+            ).length,
+
         },
 
-        results: data.results,
+        results:
+          data.results,
       });
 
 setTimeout(() => {

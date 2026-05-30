@@ -56,7 +56,9 @@ export default function SearchDiscoveryPage() {
     setCurrentPage(pageTarget);
     
     try {
-      const rankStr = selectedRanks.join(",");
+      // 🛠️ FIX: Mã hóa toàn bộ chuỗi ranks bằng encodeURIComponent để bảo toàn ký tự dấu sao (*)
+      const rankStr = encodeURIComponent(selectedRanks.join(","));
+      
       const url = `/api/search?tab=${activeTab}` +
                   `&q=${encodeURIComponent(searchQuery)}` +
                   `&field=${encodeURIComponent(areaInput)}` +
@@ -204,10 +206,16 @@ export default function SearchDiscoveryPage() {
             </label>
             <div className="space-y-2 pl-1">
               {activeTab === "conference" ? (
-                ["A*", "A", "B", "C", "Unranked"].map((rank) => (
+                /* 🌟 ĐÃ THÊM MỤC "Others" VÀO ĐOẠN ĐẦU HÀNG NÀY */
+                ["A*", "A", "B", "C", "Unranked", "Others"].map((rank) => (
                   <label key={rank} className="flex items-center gap-2.5 text-sm font-medium text-gray-600 cursor-pointer select-none">
-                    <input type="checkbox" className="w-4 h-4 rounded text-blue-600 border-gray-300" checked={selectedRanks.includes(rank)} onChange={() => handleRankToggle(rank)}/>
-                    Hạng {rank}
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded text-blue-600 border-gray-300" 
+                      checked={selectedRanks.includes(rank)} 
+                      onChange={() => handleRankToggle(rank)}
+                    />
+                    {rank === "Others" ? "Hạng khác (Others)" : `Hạng ${rank}`}
                   </label>
                 ))
               ) : (
@@ -295,8 +303,11 @@ export default function SearchDiscoveryPage() {
                         <div key={item.id} className="p-5 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 transition-all shadow-sm">
                           <div className="space-y-3 flex-1">
                             <div className="flex items-center gap-2">
+                              {/* 🌟 ĐÃ NÂNG CẤP ĐOẠN CHECK ĐỂ HIỂN THỊ ĐÚNG CÁC RANK LẠ TRONG DB */}
                               <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-extrabold">
-                                Rank {item.rank && item.rank !== "N/A" ? item.rank : "Unranked"}
+                                {item.rank && item.rank.trim() !== "" && item.rank !== "N/A" 
+                                  ? `Rank ${item.rank}` 
+                                  : "Unranked"}
                               </span>
                               {item.acronym && <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{item.acronym}</span>}
                             </div>
@@ -316,7 +327,7 @@ export default function SearchDiscoveryPage() {
                               🚀 <b>Ngày hội nghị:</b> {item.conference_date && item.conference_date.trim() !== "" && item.conference_date !== "N/A" ? item.conference_date : "N/A"}
                             </div>
 
-                            {/* Phần Link sự kiện: Chỉ hiển thị Link nếu URL hợp lệ */}
+                            {/* Phần Link sự kiện */}
                             <div className="text-xs text-gray-600">
                               🌐 <b>Link sự kiện:</b>{" "}
                               {item.conference_url && 
@@ -394,7 +405,6 @@ export default function SearchDiscoveryPage() {
                             </div>
                           </div>
 
-                          {/* 🌟 CHỈ HIỂN THỊ NÚT KHI CÓ DỮ LIỆU ĐƯỜNG DẪN JOURNAL_URL HỢP LỆ TRONG DATABASE */}
                           {item.journal_url && item.journal_url.trim() !== "" && item.journal_url !== "N/A" && (
                             <a 
                               href={item.journal_url} 

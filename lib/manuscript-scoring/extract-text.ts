@@ -11,8 +11,12 @@ export async function extractText(
 
       pdfParser.on(
         "pdfParser_dataError",
-        (errData) => {
-          reject(errData.parserError);
+        (errData: Error | { parserError: Error }) => {
+          if ("parserError" in errData) {
+            reject(errData.parserError);
+          } else {
+            reject(errData);
+          }
         }
       );
 

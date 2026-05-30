@@ -2,7 +2,7 @@
 
 import { SERVICES } from "@/lib/manuscript-scoring/services";
 
-import { ServiceType } from "@/types/service";
+import { ServiceType } from "@/types/services";
 
 type Props = {
   activeService: ServiceType;

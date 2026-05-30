@@ -6,7 +6,7 @@ import Header from "@/components/manuscript-scoring/Header";
 
 import ServiceSelector from "@/components/manuscript-scoring/ServiceSelector";
 
-import { ServiceType } from "@/types/service";
+import { ServiceType } from "@/types/services";
 
 import UploadCard from "@/components/manuscript-scoring/UploadCard";
 

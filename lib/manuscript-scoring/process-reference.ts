@@ -10,6 +10,30 @@ from "@/lib/manuscript-scoring/verify-doi";
 import { ReferenceResult }
 from "@/types/reference";
 
+/*
+========================
+NORMALIZE TEXT
+========================
+*/
+
+
+function normalizeText(
+  text: string
+) {
+  return text
+    .toLowerCase()
+
+    // remove punctuation
+    .replace(/[^\w\s]/g, "")
+
+    // remove ALL spaces
+    .replace(/\s+/g, "")
+
+    .trim();
+}
+
+
+
 export async function processReference(
   reference: string
 ): Promise<ReferenceResult> {
@@ -26,6 +50,10 @@ export async function processReference(
   let doi =
     extractedDOIs[0];
 
+  let inferredTitle:
+    | string
+    | undefined;
+
   /*
   ========================
   INFER DOI IF NEEDED
@@ -39,7 +67,63 @@ export async function processReference(
         reference
       );
 
-    doi = inferred?.doi;
+    /*
+    ========================
+    TITLE MATCH CHECK
+    ========================
+    */
+
+    if (
+      inferred?.title
+    ) {
+
+      const normalizedReference =
+        normalizeText(
+          reference
+        );
+
+      const normalizedTitle =
+        normalizeText(
+          inferred.title
+        );
+
+
+      const isMatch =
+        normalizedReference.includes(
+          normalizedTitle
+        )
+        ||
+        normalizedTitle.includes(
+          normalizedReference
+        );
+
+
+
+      /*
+      ========================
+      TITLE NOT FOUND
+      ========================
+      */
+
+      if (!isMatch) {
+
+        return {
+          reference,
+
+          title:
+            inferred.title,
+
+          status:
+            "not_found",
+        };
+      }
+    }
+
+    doi =
+      inferred?.doi;
+
+    inferredTitle =
+      inferred?.title;
   }
 
   /*
@@ -73,7 +157,8 @@ export async function processReference(
       verified.doi,
 
     title:
-      verified.title,
+      verified.title
+      || inferredTitle,
 
     status:
       verified.status,

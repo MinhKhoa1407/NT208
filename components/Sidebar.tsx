@@ -1,5 +1,5 @@
 "use client";
-
+import { MessagesSquare } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Users } from "lucide-react";
 import Link from "next/link";
@@ -31,6 +31,12 @@ export default function Sidebar() {
       name: "Collaborator Finder",
       icon: SearchCheck,
       href: "/collaborator-finder"
+    },
+    {
+      id: "connections",
+      name: "Connections",
+      icon: MessagesSquare,
+      href: "/connections"
     },
     { id: "submission", name: "Submission", icon: Upload, href: "/submission" },
     { id: "ai", name: "AI Tools", icon: Bot, href: "/ai-tools" },

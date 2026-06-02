@@ -29,12 +29,13 @@ export function extractSections(
 
   const abstract =
     findSection([
-      "abstract"
+      "abstract",
     ]);
 
   const introduction =
     findSection([
-      "introduction"
+      "introduction",
+      "background",
     ]);
 
   const methods =
@@ -42,22 +43,38 @@ export function extractSections(
       "methods",
       "methodology",
       "materials and methods",
+      "approach",
+      "design",
+      "implementation",
+      "framework",
     ]);
 
   const results =
     findSection([
-      "results"
+      "results",
+      "evaluation",
+      "findings",
+      "analysis",
+      "taxonomy",
+      "experiments",
+      "experimental results",
     ]);
 
   const discussion =
     findSection([
-      "discussion"
+      "discussion",
+      "limitations",
+      "future work",
+      "future directions",
+      "open problems",
+      "recommendations",
     ]);
 
   const conclusion =
     findSection([
       "conclusion",
       "conclusions",
+      "concluding remarks",
     ]);
 
   const references =

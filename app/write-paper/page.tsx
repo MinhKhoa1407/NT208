@@ -2,23 +2,28 @@
 
 import { useState, useRef, } from "react";
 
-import Header from "@/components/manuscript-scoring/Header";
+import Header from "@/components/reference-checker/Header";
 
-import ServiceSelector from "@/components/manuscript-scoring/ServiceSelector";
+import ServiceSelector from "@/components/reference-checker/ServiceSelector";
 
 import { ServiceType } from "@/types/services";
 
-import UploadCard from "@/components/manuscript-scoring/UploadCard";
+import UploadCard from "@/components/reference-checker/UploadCard";
 
 import SummaryCards
-from "@/components/manuscript-scoring/SummaryCards";
+from "@/components/reference-checker/SummaryCards";
 
 import ResultTable
-from "@/components/manuscript-scoring/ResultTable";
+from "@/components/reference-checker/ResultTable";
 
 import { AnalysisResponse }
 from "@/types/analysis";
 
+import ManuscriptScoreCards
+from "@/components/manuscript-scoring/ManuscriptScoreCards";
+
+import { ManuscriptScore }
+from "@/types/manuscript-score";
 
 export default function ManuscriptScoringPage() {
   const [activeService, setActiveService] =
@@ -28,13 +33,15 @@ export default function ManuscriptScoringPage() {
   const [selectedFile, setSelectedFile] =
     useState<File | null>(null);
 
-  const [isAnalyzing, setIsAnalyzing] =
-    useState(false);
-  
   const [analysisResult, setAnalysisResult] =
-    useState<AnalysisResponse | null>(
-    null
-    );
+    useState<
+      AnalysisResponse
+      | ManuscriptScore
+      | null
+    >(null);
+
+  const [isAnalyzing, setIsAnalyzing] =
+  useState(false);
 
   const resultRef = useRef<HTMLDivElement | null>( null );
 
@@ -54,7 +61,7 @@ export default function ManuscriptScoringPage() {
 
       const response =
         await fetch(
-          "/api/manuscript-scoring/reference-checker",
+          `/api/manuscript-scoring/${activeService}`,
           {
             method: "POST",
             body: formData,
@@ -66,52 +73,68 @@ export default function ManuscriptScoringPage() {
 
       console.log(data);
 
-      setAnalysisResult({
-        summary: {
+if (
+  activeService ===
+  "reference-checker"
+) {
 
-          total:
-            data.results.length,
+  setAnalysisResult({
 
-          valid:
-            data.results.filter(
-              (r: any) =>
-                r.status ===
-                "valid"
-            ).length,
+    summary: {
 
-          invalid:
-            data.results.filter(
-              (r: any) =>
-                r.status ===
-                "invalid"
-            ).length,
+      total:
+        data.results.length,
 
-          retracted:
-            data.results.filter(
-              (r: any) =>
-                r.status ===
-                "retracted"
-            ).length,
+      valid:
+        data.results.filter(
+          (r: any) =>
+            r.status ===
+            "valid"
+        ).length,
 
-          notFound:
-            data.results.filter(
-              (r: any) =>
-                r.status ===
-                "not_found"
-            ).length,
-          
-          lookupFailed:
-            data.results.filter(
-              (r: any) =>
-                r.status ===
-                "lookup_failed"
-            ).length,
+      invalid:
+        data.results.filter(
+          (r: any) =>
+            r.status ===
+            "invalid"
+        ).length,
 
-        },
+      retracted:
+        data.results.filter(
+          (r: any) =>
+            r.status ===
+            "retracted"
+        ).length,
 
-        results:
-          data.results,
-      });
+      notFound:
+        data.results.filter(
+          (r: any) =>
+            r.status ===
+            "not_found"
+        ).length,
+
+      lookupFailed:
+        data.results.filter(
+          (r: any) =>
+            r.status ===
+            "lookup_failed"
+        ).length,
+
+    },
+
+    results:
+      data.results,
+
+  });
+
+} else {
+
+  setAnalysisResult(
+    data
+  );
+}
+
+
 
 setTimeout(() => {
   resultRef.current?.scrollIntoView({
@@ -161,19 +184,46 @@ setTimeout(() => {
         </div>
 
         {analysisResult && (
-          <div ref={resultRef} className="mt-10 space-y-10">
+          <div
+            ref={resultRef}
+            className="mt-10 space-y-10"
+          >
 
-            <SummaryCards
-              summary={
-                analysisResult.summary
-              }
-            />
+            {
+              activeService ===
+              "reference-checker"
+              &&
+              "summary" in analysisResult
+              && (
+                <>
+                  <SummaryCards
+                    summary={
+                      analysisResult.summary
+                    }
+                  />
 
-            <ResultTable
-              results={
-                analysisResult.results
-              }
-            />
+                  <ResultTable
+                    results={
+                      analysisResult.results
+                    }
+                  />
+                </>
+              )
+            }
+
+            {
+              activeService ===
+              "manuscript-score"
+              &&
+              "overall" in analysisResult
+              && (
+                <ManuscriptScoreCards
+                  result={
+                    analysisResult
+                  }
+                />
+              )
+            }
 
           </div>
         )}

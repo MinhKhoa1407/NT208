@@ -1,4 +1,5 @@
 "use client";
+import { KanbanSquare } from "lucide-react";
 import { MessagesSquare } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Users } from "lucide-react";
@@ -25,6 +26,12 @@ export default function Sidebar() {
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/" },
     { id: "write", name: "Write Paper", icon: FileText, href: "/write-paper" },
     { id: "search", name: "Search & Discovery", icon: Search, href: "/search" },
+    {
+      id: "workflow",
+      name: "Workflow Board",
+      icon: KanbanSquare,
+      href: "/workflow-board"
+    },
     { id: "community", name: "Community", icon: Users, href: "/community" },
     {
       id: "collaborator",

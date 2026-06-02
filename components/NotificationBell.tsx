@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/app/api/supabase/index";
 
@@ -21,6 +22,7 @@ interface NotificationItem {
 export default function NotificationBell({ currentUserId }: { currentUserId: number }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   // 1. Hàm quét DB kết hợp JOIN lấy toàn bộ thông báo cũ khi F5/Reload trang
   const fetchNotifications = async () => {
@@ -43,8 +45,20 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setNotifications(data as any);
-    }
+  const mapped: NotificationItem[] = data.map(
+    (item: any) => ({
+      id: `cfp-${item.id}`,
+      type: "cfp",
+
+      is_read: item.is_read,
+      created_at: item.created_at,
+
+      cfp: item.cfp,
+    })
+  );
+
+  setNotifications(mapped);
+}
   };
 
   useEffect(() => {
@@ -99,28 +113,157 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
 
     
   }, [currentUserId]);
+  useEffect(() => {
+  if (!currentUserId) return;
+
+  const channel = supabase
+    .channel(`message-notifications-${currentUserId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      },
+      async (payload) => {
+        const msg = payload.new as any;
+
+        if (msg.receiver_id !== currentUserId) return;
+
+                const { data: sender } = await supabase
+          .from("users")
+          .select("username")
+          .eq("id", msg.sender_id)
+          .single();
+
+        const notif: NotificationItem = {
+          id: `msg-${msg.id}`,
+          type: "message",
+          is_read: false,
+          created_at: msg.created_at,
+          content: `${sender?.username}: ${
+            msg.content || "Sent a file"
+          }`,
+        };
+
+        setNotifications((prev) => [
+          notif,
+          ...prev,
+        ]);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [currentUserId]);
+
+useEffect(() => {
+  if (!currentUserId) return;
+
+  const channel = supabase
+    .channel(`request-notifications-${currentUserId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "connections",
+      },
+      async (payload) => {
+        const req = payload.new as any;
+
+        if (
+          req.receiver_id !== currentUserId ||
+          req.status !== "pending"
+        )
+          return;
+
+        const { data: sender } =
+          await supabase
+            .from("users")
+            .select("username")
+            .eq("id", req.sender_id)
+            .single();
+
+        const notif: NotificationItem = {
+          id: `req-${req.id}`,
+          type: "request",
+
+          is_read: false,
+          created_at: req.created_at,
+
+          content:
+            sender?.username ||
+            "Someone sent you a request",
+        };
+
+        setNotifications((prev) => [
+          notif,
+          ...prev,
+        ]);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [currentUserId]);
 
   // 3. Xử lý click: Đánh dấu đã đọc ngầm trên DB + Bật tab mới sang WikiCFP
-  const handleNotificationClick = async (e: React.MouseEvent, notif: NotificationItem) => {
-    e.preventDefault(); 
-    setIsOpen(false); 
+  const handleNotificationClick = async (
+  e: React.MouseEvent,
+  notif: NotificationItem
+) => {
+  e.preventDefault();
 
-    const targetUrl = notif.cfp?.cfp_url || "http://www.wikicfp.com";
-    window.open(targetUrl, "_blank", "noopener,noreferrer");
+  setIsOpen(false);
 
-    if (!notif.is_read) {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notif.id);
+  if (notif.type === "cfp") {
+    const targetUrl =
+      notif.cfp?.cfp_url ||
+      "http://www.wikicfp.com";
 
-      if (!error) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
-        );
-      }
-    }
-  };
+    window.open(
+      targetUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+    const dbId = notif.id.replace(
+      "cfp-",
+      ""
+    );
+
+    await supabase
+      .from("notifications")
+      .update({
+        is_read: true,
+      })
+      .eq("id", dbId);
+  }
+
+  if (notif.type === "message") {
+    router.push("/connections");
+  }
+
+  if (notif.type === "request") {
+    router.push("/connection-requests");
+  }
+
+  setNotifications((prev) =>
+    prev.map((n) =>
+      n.id === notif.id
+        ? {
+            ...n,
+            is_read: true,
+          }
+        : n
+    )
+  );
+};
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -179,9 +322,23 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
                 >
                   <div className="block">
                     <div className="flex items-center gap-1.5">
-                      <p className={`text-xs text-gray-900 ${!notif.is_read ? "font-semibold" : "font-normal"}`}>
-                        🔔 Hội nghị tương thích mới!
-                      </p>
+
+                        <p
+                          className={`text-xs text-gray-900 ${
+                            !notif.is_read
+                              ? "font-semibold"
+                              : "font-normal"
+                          }`}
+                        >
+                          {notif.type === "cfp" &&
+                            "🔔 Hội nghị tương thích mới"}
+
+                          {notif.type === "message" &&
+                            "💬 Tin nhắn mới"}
+
+                          {notif.type === "request" &&
+                            "🤝 Yêu cầu kết nối mới"}
+                        </p>
                       {/* Chấm đỏ nhấp nháy động phân biệt bài chưa đọc */}
                       {!notif.is_read && (
                         <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
@@ -189,8 +346,17 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
                     </div>
                     
                     <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
-                      Bài đăng "{notif.cfp?.title || "Hội nghị ẩn"}" vừa đăng CfP khớp với lĩnh vực của bạn.
-                    </p>
+                        {notif.type === "cfp" &&
+                          `Bài đăng "${
+                            notif.cfp?.title || "Hội nghị"
+                          }" vừa khớp lĩnh vực của bạn.`}
+
+                        {notif.type === "message" &&
+                          notif.content}
+
+                        {notif.type === "request" &&
+                          `${notif.content} muốn kết nối với bạn`}
+                      </p>
                     <span className="text-[9px] text-gray-400 block mt-1">
                       {new Date(notif.created_at).toLocaleString("vi-VN")}
                     </span>

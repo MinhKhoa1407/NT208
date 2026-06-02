@@ -5,16 +5,19 @@ import { supabase } from "@/app/api/supabase/index";
 
 // Cấu trúc dữ liệu hiển thị trên giao diện
 interface NotificationItem {
-  id: number;
+  id: string;
+  type: "cfp" | "message" | "request";
+
   is_read: boolean;
   created_at: string;
-  cfp_id: number;
-  cfp: {
-    title: string;
-    cfp_url: string; 
-  } | null;
-}
 
+  cfp?: {
+    title: string;
+    cfp_url: string;
+  } | null;
+
+  content?: string;
+}
 export default function NotificationBell({ currentUserId }: { currentUserId: number }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -75,14 +78,15 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
           const customCfp = cfpData as { title: string; cfp_url: string } | null;
 
           const newNotifWithCfp: NotificationItem = {
-            id: payload.new.id,
+            id: `cfp-${payload.new.id}`,
+            type: "cfp",
+
             is_read: payload.new.is_read,
             created_at: payload.new.created_at,
-            cfp_id: payload.new.cfp_id,
-            cfp: customCfp ? { title: customCfp.title, cfp_url: customCfp.cfp_url } : null,
-          };
 
-          // Nạp thông báo mới lên đầu danh sách hiển thị
+            cfp: customCfp,
+          };
+            // Nạp thông báo mới lên đầu danh sách hiển thị
           setNotifications((prev) => [newNotifWithCfp, ...prev]);
         }
       )
@@ -92,6 +96,8 @@ export default function NotificationBell({ currentUserId }: { currentUserId: num
     return () => {
       supabase.removeChannel(channel);
     };
+
+    
   }, [currentUserId]);
 
   // 3. Xử lý click: Đánh dấu đã đọc ngầm trên DB + Bật tab mới sang WikiCFP

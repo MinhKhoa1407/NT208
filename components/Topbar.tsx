@@ -35,26 +35,34 @@ export default function Topbar() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
+  try {
+    if (!user) return;
 
-      if (!res.ok) {
-        alert("Đăng xuất thất bại!");
-        return;
-      }
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user.id,
+      }),
+    });
 
-      localStorage.removeItem("user");
-      window.dispatchEvent(new Event("userChanged"));
-      alert("Đăng xuất thành công!");
-      window.location.href = "/auth/login";
-      
-    } catch (error) {
-      console.error(error);
-      alert("Có lỗi xảy ra khi đăng xuất");
+    if (!res.ok) {
+      alert("Đăng xuất thất bại!");
+      return;
     }
-  };
+
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("userChanged"));
+
+    alert("Đăng xuất thành công!");
+    window.location.href = "/auth/login";
+  } catch (error) {
+    console.error(error);
+    alert("Có lỗi xảy ra khi đăng xuất");
+  }
+};
 
   // 🌟 LOGIC TRÍCH XUẤT TÊN: Lấy phần chữ trước dấu @ của email làm tên hiển thị
   const getDisplayName = (email: string) => {

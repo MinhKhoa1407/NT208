@@ -20,13 +20,6 @@ export const SERVICES: {
   },
 
   {
-    id: "citation-analysis",
-    title: "Citation Analysis",
-    description:
-      "Analyze citation structure and metadata.",
-  },
-
-  {
     id: "manuscript-score",
     title: "Manuscript Score",
     description:

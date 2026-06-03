@@ -1,5 +1,6 @@
 "use client";
-
+import { KanbanSquare } from "lucide-react";
+import { MessagesSquare } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Users } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +26,12 @@ export default function Sidebar() {
     { id: "dashboard", name: "Dashboard", icon: LayoutDashboard, href: "/" },
     { id: "write", name: "Write Paper", icon: FileText, href: "/write-paper" },
     { id: "search", name: "Search & Discovery", icon: Search, href: "/search" },
+    {
+      id: "workflow",
+      name: "Workflow Board",
+      icon: KanbanSquare,
+      href: "/workflow-board"
+    },
     { id: "community", name: "Community", icon: Users, href: "/community" },
     {
       id: "collaborator",
@@ -32,8 +39,14 @@ export default function Sidebar() {
       icon: SearchCheck,
       href: "/collaborator-finder"
     },
+    {
+      id: "connections",
+      name: "Connections",
+      icon: MessagesSquare,
+      href: "/connections"
+    },
     { id: "submission", name: "Submission", icon: Upload, href: "/submission" },
-    { id: "ai", name: "AI Tools", icon: Bot, href: "/ai-tools" },
+    { id: "ai", name: "Smart Matcher AI", icon: Bot, href: "/match" },
     { id: "profile", name: "Edit Profile", icon: User, href: "/profile" },
     { id: "settings", name: "Settings", icon: Settings, href: "/settings" },
   ];

@@ -8,6 +8,8 @@ import SearchResearcher from "./components/SearchResearcher";
 
 import type { Researcher } from "./types/researcher";
 
+/* ===== TYPES giữ nguyên ===== */
+
 type ResearcherDB = {
   id: number;
   name: string;
@@ -19,57 +21,182 @@ type ResearcherDB = {
   researcher_skills: { skill: string }[];
 };
 
+type RealUser = {
+  id: number;
+  username: string;
+  full_name: string;
+  affiliation: string;
+  interested_areas: string[];
+  avatar_url: string | null;
+};
+
+type Connection = {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  status: "pending" | "accepted";
+  created_at: string;
+};
+
+type CurrentUser = {
+  id: number;
+  username?: string;
+  full_name?: string;
+};
+
 export default function CollaboratorFinderPage() {
   const [search, setSearch] = useState("");
   const [researchers, setResearchers] = useState<Researcher[]>([]);
+  const [realUsers, setRealUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [connections, setConnections] = useState<Connection[]>([]);
 
-  // ✅ FIX: define function BEFORE useEffect properly
-  const fetchResearchers = async (): Promise<void> => {
+  // ✅ FIX: currentUser state (KHÔNG dùng localStorage trực tiếp)
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  // =========================
+  // GET USER ONLY CLIENT SIDE
+  // =========================
+  useEffect(() => {
+    const user = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
+    setCurrentUser(user);
+  }, []);
+
+  // =========================
+  // HANDLE CONNECT
+  // =========================
+  const handleConnect = async (receiverId: number) => {
+    if (!currentUser?.id) return;
+
+    const { data, error } = await supabase
+      .from("connections")
+      .insert({
+        sender_id: currentUser.id,
+        receiver_id: receiverId,
+        status: "pending",
+      })
+      .select();
+
+    console.log("DATA:", data);
+    console.log("ERROR:", error);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert("Connection request sent!");
+  };
+
+  // =========================
+  // CONNECTION STATUS
+  // =========================
+  const getConnectionStatus = (userId: number) => {
+    if (!currentUser?.id) return undefined;
+
+    return connections.find(
+      (c) =>
+        (c.sender_id === currentUser.id && c.receiver_id === userId) ||
+        (c.receiver_id === currentUser.id && c.sender_id === userId)
+    );
+  };
+
+  const getButtonInfo = (userId: number) => {
+    const connection = getConnectionStatus(userId);
+
+    if (!connection) {
+      return {
+        text: "Connect",
+        className:
+          "bg-gradient-to-r from-blue-500 to-indigo-600",
+        disabled: false,
+      };
+    }
+
+    if (connection.status === "accepted") {
+      return {
+        text: "Connected",
+        className: "bg-green-600",
+        disabled: true,
+      };
+    }
+
+    return {
+      text: "Pending",
+      className: "bg-yellow-500",
+      disabled: true,
+    };
+  };
+
+  // =========================
+  // FETCH DATA
+  // =========================
+  const fetchData = async (): Promise<void> => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      if (!currentUser?.id) return;
+
+      const { data: connectionData } = await supabase
+        .from("connections")
+        .select("*")
+        .or(
+          `sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`
+        );
+
+      setConnections(connectionData || []);
+
+      // users
+      const { data: usersData } = await supabase
+        .from("users")
+        .select(`
+          id,
+          username,
+          full_name,
+          affiliation,
+          interested_areas,
+          avatar_url
+        `);
+
+      setRealUsers(usersData || []);
+
+      // researchers
+      const { data: researcherData } = await supabase
         .from("researchers")
         .select(`
           *,
-          researcher_skills (
-            skill
-          )
+          researcher_skills(skill)
         `);
 
-      if (error) {
-        console.error("Supabase error FULL:", error.message, error.details, error.hint);
-        return;
-      }
-
-      const typedData = data as ResearcherDB[] | null;
-
-      const formatted: Researcher[] = (typedData || []).map((r) => ({
-        id: r.id,
-        name: r.name,
-        field: r.field,
-        university: r.university,
-        papers: r.papers,
-        match: r.match,
-        avatar: r.avatar ?? "👨‍🔬",
-        skills: r.researcher_skills?.map((s) => s.skill) || [],
-      }));
+      const formatted =
+        ((researcherData ?? []) as ResearcherDB[]).map((r) => ({
+          id: r.id,
+          name: r.name,
+          field: r.field,
+          university: r.university,
+          papers: r.papers,
+          match: r.match,
+          avatar: r.avatar ?? "👨‍🔬",
+          skills: r.researcher_skills?.map((s) => s.skill) || [],
+        }));
 
       setResearchers(formatted);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log("KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-    fetchResearchers();
-  }, []);
+    fetchData();
+  }, [currentUser]);
 
+  // =========================
+  // FILTER RESEARCHERS
+  // =========================
   const filteredResearchers = researchers.filter((r) => {
     const k = search.toLowerCase();
 
@@ -80,9 +207,25 @@ export default function CollaboratorFinderPage() {
     );
   });
 
+  // =========================
+  // FILTER USERS
+  // =========================
+  const filteredUsers = realUsers
+    .filter((u) => u.id !== currentUser?.id)
+    .filter((u) => {
+      const k = search.toLowerCase();
+
+      return (
+        u.full_name?.toLowerCase().includes(k) ||
+        u.username?.toLowerCase().includes(k) ||
+        u.affiliation?.toLowerCase().includes(k) ||
+        (u.interested_areas || []).join(" ").toLowerCase().includes(k)
+      );
+    });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
-
+      {/* UI GIỮ NGUYÊN 100% */}
       <div className="mb-10">
         <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           Collaborator Finder
@@ -100,13 +243,53 @@ export default function CollaboratorFinderPage() {
       {loading ? (
         <p className="text-gray-500">Loading researchers...</p>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredResearchers.map((r) => (
-            <ResearcherCard key={r.id} researcher={r} />
-          ))}
-        </div>
-      )}
+        <>
+          {/* USERS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="bg-white rounded-3xl p-6 shadow-md hover:shadow-2xl transition">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-3xl">
+                    👤
+                  </div>
 
+                  <div>
+                    <h3 className="text-xl font-bold">{user.full_name}</h3>
+                    <p className="text-blue-600">@{user.username}</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-gray-600">{user.affiliation}</p>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {(user.interested_areas || []).map((area) => (
+                    <span key={area} className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
+                      {area}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  disabled={getButtonInfo(user.id).disabled}
+                  onClick={() => handleConnect(user.id)}
+                  className={`mt-5 w-full py-3 rounded-2xl text-white font-semibold ${
+                    getButtonInfo(user.id).className
+                  } ${getButtonInfo(user.id).disabled ? "cursor-not-allowed" : ""}`}
+                >
+                  {getButtonInfo(user.id).text}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* RESEARCHERS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredResearchers.map((r) => (
+              <ResearcherCard key={r.id} researcher={r} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

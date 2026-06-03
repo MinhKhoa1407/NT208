@@ -30,6 +30,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Người dùng không tồn tại trong bảng profile" }, { status: 404 });
     }
 
+    await supabase
+    .from("users")
+    .update({
+      is_online: true,
+      last_seen: new Date().toISOString(),
+    })
+    .eq("id", userData.id);
+    console.log(
+  "ONLINE UPDATED:",
+  userData.id
+);
+
     // 3. TẠO RESPONSE VÀ ĐÍNH KÈM COOKIE KHI ĐĂNG NHẬP THÀNH CÔNG
     const response = NextResponse.json({
       message: "Đăng nhập thành công!",
@@ -46,7 +58,7 @@ export async function POST(request: Request) {
 
     return response;
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("=== LỖI ĐĂNG NHẬP ===", error);
     return NextResponse.json({ error: "Đăng nhập thất bại!" }, { status: 500 });
   }

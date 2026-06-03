@@ -25,6 +25,12 @@ from "@/components/manuscript-scoring/ManuscriptScoreCards";
 import { ManuscriptScore }
 from "@/types/manuscript-score";
 
+import AIReviewResult
+from "@/components/ai-review/AIReviewResult";
+
+import type {AIReviewResult as AIReviewData} 
+from "@/types/ai-review";
+
 export default function ManuscriptScoringPage() {
   const [activeService, setActiveService] =
     useState<ServiceType>(
@@ -37,6 +43,7 @@ export default function ManuscriptScoringPage() {
     useState<
       AnalysisResponse
       | ManuscriptScore
+      | AIReviewData
       | null
     >(null);
 
@@ -193,7 +200,7 @@ setTimeout(() => {
               activeService ===
               "reference-checker"
               &&
-              "summary" in analysisResult
+              "results" in analysisResult
               && (
                 <>
                   <SummaryCards
@@ -218,6 +225,21 @@ setTimeout(() => {
               "overall" in analysisResult
               && (
                 <ManuscriptScoreCards
+                  result={
+                    analysisResult
+                  }
+                />
+              )
+            }
+
+            {
+              activeService ===
+              "ai-review"
+              &&
+              "grammarIssues"
+                in analysisResult
+              && (
+                <AIReviewResult
                   result={
                     analysisResult
                   }

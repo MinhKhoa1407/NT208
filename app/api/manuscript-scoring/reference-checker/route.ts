@@ -118,7 +118,7 @@ export async function POST(
         (resolve) =>
           setTimeout(
             resolve,
-            300
+            50
           )
       );
     }

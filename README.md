@@ -1,36 +1,174 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NT208 Project 
 
-## Getting Started
+## 📚 SciWrite - Nền tảng hỗ trợ viết và nộp bài báo khoa học đến các tạp chí hội nghị uy tín 
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-blue?logo=typescript)
+![Node.js](https://img.shields.io/badge/Node.js-18+-green?logo=node.js)
+![License](https://img.shields.io/badge/License-Educational-orange) 
+
+A modern web application developed for the **NT208** course using **Next.js**, **TypeScript**, and modern web technologies.
+
+🌐 **Live Demo:** https://sciwrite-uit.vercel.app/
+
+---
+
+## 📖 Overview
+
+SciWrite is a web-based platform designed to support researchers, students, and academics throughout the scientific publishing process. The platform enables users to write, manage, and submit research papers while providing an intuitive interface for collaboration and manuscript organization.
+
+The project was developed as part of the **NT208 – Web Application Development** course.
+
+--- 
+
+## ✨ Key Features
+
+- User authentication and authorization
+- Academic paper creation and editing
+- Journal and conference submission management
+- Paper status tracking
+- Responsive user interface
+- Secure document management
+- RESTful API integration
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 15 |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Runtime | Node.js |
+| Package Manager | npm |
+| Version Control | Git & GitHub |
+
+---
+
+## 📂 Project Structure
+
+```text
+.
+├── app/                # App Router pages
+├── components/         # Reusable UI components
+├── public/             # Static assets
+├── lib/                # Utility functions
+├── types/
+├── package.json
+└── README.md
+```
+
+> The structure may evolve as new features are added.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Before running the project, make sure you have installed:
+
+- Node.js (v18 or later recommended)
+- npm
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/MinhKhoa1407/NT208.git
+```
+
+Move into the project directory:
+
+```bash
+cd NT208
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open your browser and visit:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📜 Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Description |
+|----------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build the application |
+| `npm run start` | Run production build |
+| `npm run lint` | Run ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🌐 Deployment
 
-## Deploy on Vercel
+To create a production build:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+npm run start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The project can be deployed on:
+
+- Vercel
+- Render
+- Railway
+- Any Node.js hosting platform
+
+---
+
+## 👥 Team Members
+
+| MSSV | Student | Role |
+|------|---------|------|
+| 24520830 | Nguyễn Lâm Minh Khoa| Nhóm trưởng |
+| 24520871 | Trần Minh Khôi | Thành viên |
+| 24520862 | Nguyễn Đình Anh Khôi | Thành viên |
+
+---
+
+## 📊 Contribution
+
+| Student | Contribution |
+|----------|-------------:|
+| Nguyễn Lâm Minh Khoa | 40% |
+| Trần Minh Khôi | 30% |
+| Nguyễn Đình Anh Khôi | 30% |
+| **Total** | **100%** |
+
+---
+
+## 🔗 Additional Resources
+
+- 🎥 Demo Video: https://...
+- 📑 User Survey: https://...
+
+---
+## 📄 License
+
+This project is developed for educational purposes as part of the **NT208** course.
+
+---
+
+## ✨ Acknowledgement
+
+> **Chúng em đã biết làm web và hiểu hệ thống web hoạt động như thế nào.**
+

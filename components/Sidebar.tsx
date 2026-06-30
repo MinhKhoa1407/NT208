@@ -45,10 +45,8 @@ export default function Sidebar() {
       icon: MessagesSquare,
       href: "/connections"
     },
-    { id: "submission", name: "Submission", icon: Upload, href: "/submission" },
     { id: "ai", name: "Smart Matcher AI", icon: Bot, href: "/match" },
     { id: "profile", name: "Edit Profile", icon: User, href: "/profile" },
-    { id: "settings", name: "Settings", icon: Settings, href: "/settings" },
   ];
 
   return (

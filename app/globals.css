@@ -85,10 +85,7 @@ body {
   .dark {
     color-scheme: dark;
   }
-<<<<<<< Updated upstream
-=======
 }
-
 
 @keyframes float {
   0%, 100% {
@@ -124,5 +121,5 @@ body {
 
 .animate-shimmer {
   animation: shimmer 1.2s linear infinite;
->>>>>>> Stashed changes
 }
+

@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  Bot,
+  FileText,
+  Users,
+  MessageSquare,
+  Search,
+  KanbanSquare,
+} from "lucide-react";
+
 type User = {
   name: string;
   email: string;
@@ -11,6 +20,15 @@ type User = {
 export default function Home() {
 
   const [user, setUser] = useState<User | null>(null);
+  const rotatingTexts = [
+  "Write Papers.",
+  "Find Collaborators.",
+  "Manage Projects.",
+  "Discover Research.",
+  "Publish Faster.",
+];
+
+const [currentText, setCurrentText] = useState(0);
 
   const loadUser = () => {
     const storedUser = localStorage.getItem("user");
@@ -34,115 +52,365 @@ export default function Home() {
 
   }, []);
 
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentText((prev) => (prev + 1) % rotatingTexts.length);
+  }, 2500);
+
+  return () => clearInterval(interval);
+}, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
 
       {/* CHƯA LOGIN */}
       {!user && (
+  <div className="flex flex-col items-center justify-center text-center max-w-4xl">
 
-        <div className="text-center max-w-2xl">
+    {/* LOGO */}
+    <div className="text-8xl mb-3 animate-pulse">
+      <Bot
+      size={90}
+      className="
+      text-indigo-600
+      mb-8
+      drop-shadow-lg
+      "
+    />
+    </div>
 
-          <h1 className="text-5xl font-bold mb-4 text-gray-900">
-            Welcome to <span className="text-blue-600">SciWrite</span> 👋
-          </h1>
+    {/* TITLE */}
+    <h1 className="text-7xl font-extrabold tracking-tight mb-6">
+      <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        SciWrite
+      </span>
+    </h1>
+    <p className="uppercase tracking-[0.4em] text-sm text-gray-400 mb-8">
+  RESEARCH OPERATING SYSTEM
+</p>
 
-          <p className="text-gray-500 text-lg">
-            Nền tảng hỗ trợ soạn thảo và quản lý bài báo nghiên cứu khoa học bằng AI.
-          </p>
+    {/* MAIN MESSAGE */}
+    <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+      Research smarter.
+    </h2>
 
-        </div>
+    {/* CHANGING TEXT */}
+    <div className="h-12 flex items-center justify-center mb-8">
+      <span
+        className="
+        text-2xl
+        md:text-3xl
+        font-semibold
+        text-blue-600
+        animate-pulse
+        "
+      >
+        {rotatingTexts[currentText]}
+      </span>
+    </div>
 
-      )}
+    {/* DESCRIPTION */}
+    <p className="text-lg text-gray-500 max-w-2xl mb-10">
+      AI-powered platform for scientific writing,
+      collaboration and research workflow management.
+    </p>
+
+    {/* BUTTON */}
+    <Link href="/auth/login">
+  <button
+  className="
+  relative
+  px-10
+  py-4
+  rounded-2xl
+  text-white
+  font-bold
+  overflow-hidden
+  group
+  "
+>
+  <div
+    className="
+    absolute
+    inset-0
+    bg-gradient-to-r
+    from-blue-600
+    via-indigo-500
+    to-purple-600
+    "
+  />
+
+  <div
+    className="
+    absolute
+    inset-0
+    opacity-0
+    group-hover:opacity-100
+    bg-gradient-to-r
+    from-purple-500
+    via-pink-500
+    to-blue-500
+    transition
+    duration-500
+    "
+  />
+
+  <span className="relative z-10">
+    Get Started 
+  </span>
+</button>
+</Link>
+
+    {/* FEATURES */}
+    <div className="mt-16 flex flex-wrap justify-center gap-4">
+
+      <span className="px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+        📄 Paper Writing
+      </span>
+
+      <span className="px-4 py-2 rounded-full bg-indigo-50 text-indigo-700">
+        🤖 AI Assistant
+      </span>
+
+      <span className="px-4 py-2 rounded-full bg-emerald-50 text-emerald-700">
+        👥 Community
+      </span>
+
+      <span className="px-4 py-2 rounded-full bg-orange-50 text-orange-700">
+        📊 Workflow Board
+      </span>
+
+      <span className="px-4 py-2 rounded-full bg-purple-50 text-purple-700">
+        💬 Messaging
+      </span>
+
+      <span className="px-4 py-2 rounded-full bg-cyan-50 text-cyan-700">
+        🔍 Discovery
+      </span>
+
+    </div>
+
+  </div>
+)}
 
       {/* ĐÃ LOGIN */}
-      {user && (
+{user && (
+  <div className="w-full max-w-6xl mx-auto space-y-8">
 
-        <>
+    {/* HERO */}
+    <div
+      className="
+      relative
+      overflow-hidden
+      rounded-[32px]
+      bg-gradient-to-r
+      from-blue-600
+      via-indigo-600
+      to-purple-600
+      text-white
+      p-10
+      shadow-2xl
+      "
+    >
+      <div className="absolute -top-24 -right-24 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-24 left-1/3 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+      <div className="flex flex-col md:flex-row items-center justify-between gap-8">
 
-          <div className="text-center mb-14 max-w-2xl">
+        <div>
+          <h1 className="text-5xl font-bold mb-4">
+            Welcome back {user.name} 👋
+          </h1>
 
-            <h1 className="text-5xl font-bold mb-4 text-gray-900">
-              Welcome back <span className="text-blue-600">{user.name}</span> 👋
-            </h1>
+          <p className="text-lg text-blue-100 mb-2">
+            Build, collaborate and publish research faster with SciWrite.
+          </p>
 
-            <p className="text-gray-500 text-lg">
-              Continue working on your research papers.
-            </p>
+          <Link href="/write-paper">
+            <button
+              className="
+              px-6
+              py-3
+              rounded-xl
+              bg-white
+              text-blue-700
+              font-semibold
+              hover:scale-105
+              transition
+              "
+            >
+              Start
+            </button>
+          </Link>
+        </div>
 
-          </div>
+        <div className="grid grid-cols-3 gap-8">
 
+  <FileText
+    size={52}
+    className="
+      text-white
+      float-slow
+      drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-          {/* CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+  <Bot
+    size={56}
+    className="
+      text-white
+      float-fast
+      drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-            {/* New Paper */}
-            <Link href="/write-paper">
+  <Users
+    size={52}
+    className="
+      text-white
+      float-medium
+      drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-              <div className="p-8 rounded-2xl 
-              bg-blue-50
-              border border-blue-100
-              hover:scale-105 hover:shadow-lg
-              transition cursor-pointer">
+  <KanbanSquare
+    size={52}
+    className="
+      text-white
+      float-medium
+      drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-                <div className="text-3xl mb-3">📝</div>
+  <MessageSquare
+    size={52}
+    className="
+      text-white
+      float-slow
+      drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-                <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                  New Paper
-                </h2>
+  <Search
+    size={52}
+    className="
+      text-white
+      float-fast
+      drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]
+      hover:scale-125
+      transition
+      cursor-pointer
+    "
+  />
 
-                <p className="text-gray-500">
-                  Tạo bài báo khoa học mới
-                </p>
+</div>
 
-              </div>
+      </div>
+    </div>
 
-            </Link>
+    {/* SECTION TITLE */}
+    <div>
+      <h2 className="text-2xl font-bold text-gray-800">
+        Research Workspace
+      </h2>
 
+      <p className="text-gray-500">
+        Access all research tools from one place.
+      </p>
+    </div>
 
-            {/* Upload */}
-            <div className="p-8 rounded-2xl 
-            bg-purple-50
-            border border-purple-100
-            hover:scale-105 hover:shadow-lg
-            transition cursor-pointer">
+    {/* TOOLS */}
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-              <div className="text-3xl mb-3">📤</div>
+      <Link href="/write-paper">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <FileText className="text-blue-600 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            Paper Writing
+          </h3>
+          <p className="text-gray-500">
+            Create and manage scientific manuscripts.
+          </p>
+        </div>
+      </Link>
 
-              <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                Upload
-              </h2>
+      <Link href="/match">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <Bot className="text-indigo-600 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            AI Assistant
+          </h3>
+          <p className="text-gray-500">
+            Improve writing and research quality.
+          </p>
+        </div>
+      </Link>
 
-              <p className="text-gray-500">
-                Upload bản thảo của bạn
-              </p>
+      <Link href="/community">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <Users className="text-emerald-600 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            Community
+          </h3>
+          <p className="text-gray-500">
+            Connect with fellow researchers.
+          </p>
+        </div>
+      </Link>
 
-            </div>
+      <Link href="/workflow-board">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <KanbanSquare className="text-orange-500 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            Workflow Board
+          </h3>
+          <p className="text-gray-500">
+            Organize and track research progress.
+          </p>
+        </div>
+      </Link>
 
+      <Link href="/connections">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <MessageSquare className="text-purple-600 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            Messages
+          </h3>
+          <p className="text-gray-500">
+            Communicate with collaborators.
+          </p>
+        </div>
+      </Link>
 
-            {/* AI Tools */}
-            <div className="p-8 rounded-2xl 
-            bg-indigo-50
-            border border-indigo-100
-            hover:scale-105 hover:shadow-lg
-            transition cursor-pointer">
+      <Link href="/search">
+        <div className="group bg-white rounded-3xl border p-7 hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer">
+          <Search className="text-cyan-600 mb-4" size={34} />
+          <h3 className="font-bold text-xl mb-2">
+            Discovery
+          </h3>
+          <p className="text-gray-500">
+            Search papers and research resources.
+          </p>
+        </div>
+      </Link>
 
-              <div className="text-3xl mb-3">🤖</div>
-
-              <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                AI Tools
-              </h2>
-
-              <p className="text-gray-500">
-                Kiểm tra và cải thiện bài viết
-              </p>
-
-            </div>
-
-          </div>
-
-        </>
-
-      )}
+    </div>
+  </div>
+)}
 
     </div>
   );

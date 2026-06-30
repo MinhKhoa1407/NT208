@@ -120,7 +120,7 @@ Focus on:
 - Similarity-risk wording
 
 Requirements:
-- Return at most 15 suggestions.
+- Return at most 10 suggestions.
 - Keep the original meaning.
 - Improve clarity and academic quality.
 - Do not rewrite sentences that are already good.

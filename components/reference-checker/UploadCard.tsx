@@ -1,6 +1,10 @@
 "use client";
 
-import { Upload, FileText } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  LoaderCircle,
+} from "lucide-react";
 
 type Props = {
   selectedFile: File | null;
@@ -85,11 +89,47 @@ export default function UploadCard({
           <button
             onClick={onAnalyze}
             disabled={isAnalyzing}
-            className="px-6 py-3 rounded-2xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition disabled:opacity-50"
+            className={`
+  relative
+  overflow-hidden
+  flex
+  items-center
+  justify-center
+  gap-2
+
+  px-6
+  py-3
+
+  rounded-2xl
+
+  bg-slate-900
+  text-white
+  font-medium
+
+  transition-all
+  duration-300
+
+  hover:bg-slate-800
+  hover:scale-105
+
+  disabled:opacity-70
+  disabled:cursor-not-allowed
+`}
           >
-            {isAnalyzing
-              ? "Analyzing..."
-              : "Analyze"}
+          {isAnalyzing && (
+  <span className="absolute inset-y-0 -left-20 w-20 bg-white/20 skew-x-[-20deg] animate-shimmer" />
+)}
+            {isAnalyzing ? (
+  <>
+    <LoaderCircle
+      size={18}
+      className="animate-spin"
+    />
+    <span>Analyzing...</span>
+  </>
+) : (
+  "Analyze"
+)}
           </button>
         </div>
       )}

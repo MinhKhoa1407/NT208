@@ -87,7 +87,6 @@ body {
   }
 }
 
-
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -123,3 +122,4 @@ body {
 .animate-shimmer {
   animation: shimmer 1.2s linear infinite;
 }
+

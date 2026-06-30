@@ -15,6 +15,9 @@ ${COHERENCE_PROMPT}
 
 ${text}
 `,
+config: {
+        responseMimeType: "application/json",
+      },
     });
 
   const cleaned = cleanJson(

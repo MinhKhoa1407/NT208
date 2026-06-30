@@ -1,6 +1,20 @@
-export function extractReferences(
-  text: string
-) {
+export function extractReferences(text: string) {
+  /*
+  ========================
+  FIND REFERENCES SECTION
+  ========================
+  */
+
+  const referenceSectionMatch = text.match(
+    /(references|bibliography)\s*\n?([\s\S]*)$/i
+  );
+
+  if (!referenceSectionMatch) {
+    console.log("NO REFERENCES SECTION FOUND");
+    return [];
+  }
+
+  const referenceSection = referenceSectionMatch[2];
 
   /*
   ========================
@@ -8,17 +22,12 @@ export function extractReferences(
   ========================
   */
 
-  const matches =
-    text.match(
-      /\[\d+\][\s\S]*?(?=\[\d+\]|$)/g
-    );
+  const matches = referenceSection.match(
+    /\[\d+\][\s\S]*?(?=\[\d+\]|$)/g
+  );
 
   if (!matches) {
-
-    console.log(
-      "NO REFERENCES FOUND"
-    );
-
+    console.log("NO REFERENCES FOUND");
     return [];
   }
 
@@ -28,29 +37,13 @@ export function extractReferences(
   ========================
   */
 
-  const references =
-    matches
-      .map((ref) =>
-        ref
-          .replace(/\s+/g, " ")
-          .trim()
-      )
-      .filter(
-        (ref) =>
-          ref.length > 50
-      );
+  const references = matches
+    .map((ref) =>
+      ref.replace(/\s+/g, " ").trim()
+    )
+    .filter((ref) => ref.length > 50);
 
-  /*
-  ========================
-  DEBUG
-  ========================
-  */
-
-  console.log(
-    "REFERENCE COUNT:",
-    references.length
-  );
+  console.log("REFERENCE COUNT:", references.length);
 
   return references;
 }
-

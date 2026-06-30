@@ -158,8 +158,7 @@ The project can be deployed on:
 
 ## 🔗 Additional Resources
 
-- 🎥 Demo Video: https://...
-- 📑 User Survey: https://...
+- 🎥 Demo Video: https://drive.google.com/file/d/1LlIBHiCA-WDX_xfetbsDC4vx6X8YdLE2/view?usp=drive_link
 
 ---
 ## 📄 License
